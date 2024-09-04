@@ -4,7 +4,7 @@ use algo::{decode, Layer};
 use std::fs::File;
 
 pub fn main() {
-    let file = File::open(r"pc_code\Algorithms\json_files\141.json").expect("Failed to open file");
+    let file = File::open("pc_code/Algorithms/json_files/141.json").expect("Failed to open file");
     let result = decode::decode_json(file);
     // Iterate over the entries and print each key-value pair
     let mut sorted = result.into_iter().collect::<Vec<(i32, Box<dyn Layer>)>>();
@@ -36,7 +36,7 @@ mod tests {
     #[test]
     fn test_convolution() {
         //weight data
-        let file = File::open(r"pc_code/Algorithms/json_files/test_convolution.json").expect("Failed to open file");
+        let file = File::open("pc_code/Algorithms/json_files/test_convolution.json").expect("Failed to open file");
         let result = decode::decode_json(file);
         let r = result.get(&1).expect("failed");
         let output_shape = r.get_output_shape();
