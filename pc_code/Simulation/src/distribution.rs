@@ -153,12 +153,17 @@ pub fn distribute_mapping_weight_quant(
     output_dir: String,
     portions:Vec<u8>,
 ) {
-    if !fs::metadata(&output_dir).is_ok() {
-        // If it doesn't exist, create the folder
-        match fs::create_dir_all(&output_dir) {
-            Ok(_) => println!("Folder created successfully"),
-            Err(e) => eprintln!("Error creating folder: {}", e),
+    //If the folder is present, delete it, so simulation runs with a fresh instance
+    if fs::metadata(&output_dir).is_ok() {
+        match fs::remove_dir_all(&output_dir) {
+            Ok(_) => println!("Folder deleted successfully"),
+            Err(e) => eprintln!("Error deleting folder: {}", e),
         }
+    }
+    //Create the Simu_q folder
+    match fs::create_dir_all(&output_dir) {
+        Ok(_) => println!("Folder created successfully"),
+        Err(e) => eprintln!("Error creating folder: {}", e),
     }
     let mut input_shape = vec![input_shape.0, input_shape.1, input_shape.2];
     let (res, w_scales, w_zeros) = quantize_layers_weights(&layers);
