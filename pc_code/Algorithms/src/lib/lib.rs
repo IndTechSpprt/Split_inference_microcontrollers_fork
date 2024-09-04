@@ -59,21 +59,35 @@ pub struct QuantizedMapping {
     pub zero_point: (u8, u8, u8),
     pub scale: (f32, f32, f32), //todo! convert this to u32
 }
+
+///Layer trait, that each object is associated with
 pub trait Layer {
+    /// Returns the layer type
     fn identify(&self) -> &str;
+    /// Find the positions of the input neurons by tracing back the receptive field
     fn get_input(&self, position: Vec<i32>) -> Vec<Vec<i32>>;
     // fn get_weight(&self,position:Vec<i32>) -> f32;
+    /// Returns the output dimension of the layer
     fn get_output_shape(&self) -> Vec<i32>;
+    /// Layer specific information, wrapped inside [`InfoWrapper`], with the exact variant based
+    /// on the layer type
     fn get_info(&self) -> InfoWrapper;
+    /// Returns the bias used to calculate the result
     fn get_bias(&self, p: i32) -> f32;
+    /// Print all the layer information
     fn get_all(&self) -> &dyn Debug;
+    /// Prints shape of the weights of the layer
     fn print_weights_shape(&self);
+    /// Returns sample weight data using the input positions and output channel
     fn get_weights_from_input(&self, input: Vec<Vec<i32>>, c: i32) -> Vec<f32>;
+    /// Only applicable to the functional layer - perform forward propagation
     fn functional_forward(
         &self,
         input: &mut Vec<Vec<Vec<f32>>>,
     ) -> Result<&'static str, &'static str>;
+    /// Return the layer's weights
     fn get_weights(&self) -> Vec<f32>;
+    /// Returns the layer specific information wrapped inside [`InfoWrapper`] without padding
     fn get_info_no_padding(&self) -> InfoWrapper;
 }
 #[derive(Debug, Serialize, Deserialize)]
@@ -151,7 +165,7 @@ impl IOMapping for LinearMapping {
         result
     }
 }
-
+///Convolution layer implementation
 impl Layer for Conv {
     fn identify(&self) -> &str {
         "Convolution"
@@ -180,6 +194,8 @@ impl Layer for Conv {
         reuslt
     }
 
+    /// Returns the information specific to the convolution layer as InfoWrapper::Convolution
+    /// The data returned is of the type [`ConvMapping`]
     fn get_info(&self) -> InfoWrapper {
         let mut padded_input = self.info.i;
         if self.info.k.0 > 1 && self.info.k.1 > 1 {
