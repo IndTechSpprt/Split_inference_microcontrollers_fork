@@ -1,9 +1,13 @@
 import serial
 import time
 import json
+import sys
+
+# Port passed as argument, later on, platform IO will take care of this
+com = sys.argv[1]
 
 # Configure serial port (change COMx to match your Arduino's serial port)
-ser = serial.Serial('COM3', 9600, timeout=1)  # Adjust baud rate and port as needed
+ser = serial.Serial(com, 9600, timeout=1)  # Adjust baud rate and port as needed
 
 
 def send_data_to_arduino(data):
