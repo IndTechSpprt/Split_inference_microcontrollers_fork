@@ -71,6 +71,9 @@ of the model weights and workload. The number in the file's name indicates the i
 `coor_lines` indicates for current layer's coordinator data, how many bytes should be read from FLASH memory.
 All these 4 information can be acquired during the distribution of the models.
 
+### PlatformIO code
+All of the MCU code has also been ported to platform IO, it is possible to open them as individual projects and flash them through VSCode with the PlatformIO extension. This has been done to allow the use of a single IDE for flashing. However, it is still necessary to open a new instance of VSCode to flash.
+
 # How to run the code
 ## How to run simulation
 You can simply use `cargo run --package Simulation` to run simulation.
