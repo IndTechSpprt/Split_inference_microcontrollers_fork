@@ -9,7 +9,7 @@ int ino_count = 0;
 void setup() {
   setup_filesys();
   {
-    setup_communication(ip1,mac1); 
+    setup_communication(); 
     byte* temp = new(std::nothrow) byte[450 * 1024];
     if(temp != nullptr) {Serial.println("success");}
     delete[] temp;

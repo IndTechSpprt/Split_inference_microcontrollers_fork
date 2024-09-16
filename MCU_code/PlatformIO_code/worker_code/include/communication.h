@@ -10,30 +10,21 @@ std::vector<std::vector<byte>> zps = {{117,123,121},{136,133,132},{132,131,135},
 std::vector<std::vector<float>> scales = {{0.026925236,0.030070057,0.040337086},{0.021326661,0.018447906,0.026975844},{0.026975844,0.01711597,0.03300309},{0.017282467,0.013020085,0.019367196},{0.019367196,0.010685049,0.020728296},{0.020728296,0.013996841,0.022537425},{0.016347256,0.011939427,0.019542953},{0.019542953,0.017455006,0.026837224},{0.013501433,0.010944449,0.019419255},{0.019419255,0.022365179,0.0346372}};
 const int reserve_bytes = 6; //|from which|to which/message type|length * 4|
 const int num_mcu = 3;
-const byte mcu_id = 0;
-// Define IP addresses and ports for each MCU
+// Define ID, ip addresses and ports for each MCU
+const byte mcu_id = MCU_ID;
+IPAddress ip(169,254,71,IP_END);
 IPAddress server(169,254,71,125);
-IPAddress ip1(169,254,71,124);
-IPAddress ip2(169,254,71,123);
-IPAddress ip3(169,254,71,122);
-byte mac1[] = {
-  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEB
+byte mac[] = {
+  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, MAC_END
 };
-byte mac2[] = {
-  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEC
-};
-byte mac3[] = {
-  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
-};
-
 unsigned int serverport = 8080;  // Local port to listen on for UDP packets
 EthernetClient client;
 bool permission_flag = false;
-void setup_communication(IPAddress ip,const byte* mac) {
+void setup_communication() {
   Ethernet.setStackHeap(10 * 1024);
   Ethernet.setSocketSize(8 * 1024);
   Ethernet.setSocketNum(1);
-  Ethernet.begin(mac,ip);// Change to mac2 and ip2 for MCU2, mac3 and ip3 for MCU3
+  Ethernet.begin(mac,ip);
   Serial.println("connecting...");
   while (!client.connect(server, serverport)) {} //connect to server
   while (!client.available()) {} //read a byte from server to indicate communication established
