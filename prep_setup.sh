@@ -4,8 +4,8 @@
 set -e
 
 #temp variable
-temp="worker_0"
-export temp
+mcu_role_id="worker_0"
+export mcu_role_id
 
 ## Script to put the controller into download mode, upload weight fragments and then flash worker code
 echo "flashing teensy 4.1 to put it into download mode"
