@@ -5,9 +5,12 @@ set -e
 
 echo "This script will configure your teensy for inference"
 
-read -p "Please specify the role and ID of the device to be configured in the following format - <role>_<ID>" mcu_role_id
+read -p "Please specify the role of the device to be configured: " mcu_role
 
-export mcu_role_id
+read -p "Please specify the id of the device to be configured: " mcu_id
+
+export mcu_role
+export mcu_id
 
 read -p "Is the device connected to the PC? (Y/N)" ynconn
 case $ynconn in 
@@ -16,7 +19,7 @@ case $ynconn in
         exit;;
 esac
 
-echo "configuring teensy 4.1 as $mcu_role_id"
+echo "configuring teensy 4.1 as $mcu_role $mcu_id$"
 
 cd ./MCU_code/PlatformIO_code/download
 pio run --target upload
