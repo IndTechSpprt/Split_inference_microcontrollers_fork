@@ -1,7 +1,13 @@
 import os
+import warnings
 
-# Get ID from environment variable
-id = os.environ['mcu_id']
+if 'mcu_id' in os.environ:
+    # Get ID from environment variable if set
+    id = os.environ['mcu_id']
+else:
+    #Default ID is set to 0, remember to throw a warning
+    warnings.warn("You have not specified an MCU ID, setting it to 0")
+    id = "0"
 
 # Convert ID to int
 id_int = int(id)
