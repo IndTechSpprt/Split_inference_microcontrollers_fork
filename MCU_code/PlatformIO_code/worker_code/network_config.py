@@ -10,4 +10,4 @@ id_int = int(id)
 ip_end = str(124 - id_int)
 mac_end = str(0xEB + id_int)
 
-print("'-DMCU_ID=%s' '-DIP_END=%s' '-DMAC_END=%s'" % id % ip_end % mac_end)
+print("'-DMCU_ID=%s' '-DIP_END=%s' '-DMAC_END=%s'" % (id ip_end mac_end))
