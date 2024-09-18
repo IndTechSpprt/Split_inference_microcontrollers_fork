@@ -34,13 +34,14 @@ cd ./PlatformIO_code/worker_code
 pio run --target upload
 sleep 5 &
 wait
-echo "----DONE!----"
-#echo "checking if the configuration was successful"
+echo "checking if the configuration was successful"
 #TODO dynamic
-#ping -c 5 169.254.71.124
-#if [$? -eq 0]; then
-#    echo "----DONE!----"
-#else
-#    echo "FAILED!"
-#    exit
-#fi
+TEST = ping -c 5 169.254.71.124
+eval $TEST
+if [$? -eq 0]; then
+    echo "----DONE!----"
+else
+    echo "FAILED!"
+    exit
+fi
+echo "----DONE!----"
