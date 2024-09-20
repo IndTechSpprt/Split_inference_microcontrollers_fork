@@ -3,21 +3,44 @@
 #Enable errors
 set -e
 
-#temp variable
-temp="worker_0"
-export temp
+echo "This script will configure your teensy for inference"
 
-## Script to put the controller into download mode, upload weight fragments and then flash worker code
-echo "flashing teensy 4.1 to put it into download mode"
+read -p "Please specify the role of the device to be configured: " mcu_role
+
+read -p "Please specify the id of the device to be configured: " mcu_id
+
+export mcu_role
+export mcu_id
+
+read -p "Is the device connected to the PC? (Y/N)" ynconn
+case $ynconn in 
+    [yY]*);;
+    *) echo "Check connection and try again" 
+        exit;;
+esac
+
+echo "configuring teensy 4.1 as $mcu_role $mcu_id"
+
 cd ./MCU_code/PlatformIO_code/download
 pio run --target upload
-#TODO add success check before proceeding
-echo "Done, now attempting to download weights..."
-sleep 5
+echo "Waiting for COM connection"
+sleep 5 &
+wait
+echo "Attempting to download weights..."
 cd ../../
 python ./write_into_mcus.py /dev/ttyACM0
 echo "now flashing worker code and setting up communication..."
 cd ./PlatformIO_code/worker_code
 pio run --target upload
-#Check if success before saying done
-echo "----DONE!----"
+sleep 5 &
+wait
+echo "checking if the configuration was successful"
+ip_last=$((124+$mcu_id))
+ping -c 5 169.254.71.$ip_last
+res=$?
+if [[ $res -eq 0 ]]; then
+    echo "----DONE!----"
+else
+    echo "FAILED!"
+    exit
+fi
