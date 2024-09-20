@@ -1,9 +1,6 @@
 name: PC Code
 
-on:
-  push:
-  pull_request:
-    branches: [ "master" ]
+on: [push]
 
 env:
   CARGO_TERM_COLOR: always
