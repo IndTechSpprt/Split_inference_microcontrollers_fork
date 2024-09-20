@@ -8,8 +8,8 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "/home/shashwathsuresh/Documents/PlatformIO/Projects/240913-172115-teensy41/include",
-                "/home/shashwathsuresh/Documents/PlatformIO/Projects/240913-172115-teensy41/src",
+                "/home/shashwathsuresh/TUDelft/ResearchInternship/Split_inference_microcontrollers_fork/MCU_code/PlatformIO_code/download/include",
+                "/home/shashwathsuresh/TUDelft/ResearchInternship/Split_inference_microcontrollers_fork/MCU_code/PlatformIO_code/download/src",
                 "/home/shashwathsuresh/.platformio/packages/framework-arduinoteensy/libraries/LittleFS/src",
                 "/home/shashwathsuresh/.platformio/packages/framework-arduinoteensy/libraries/SPI",
                 "/home/shashwathsuresh/.platformio/packages/framework-arduinoteensy/cores/teensy4",
@@ -115,8 +115,8 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "/home/shashwathsuresh/Documents/PlatformIO/Projects/240913-172115-teensy41/include",
-                    "/home/shashwathsuresh/Documents/PlatformIO/Projects/240913-172115-teensy41/src",
+                    "/home/shashwathsuresh/TUDelft/ResearchInternship/Split_inference_microcontrollers_fork/MCU_code/PlatformIO_code/download/include",
+                    "/home/shashwathsuresh/TUDelft/ResearchInternship/Split_inference_microcontrollers_fork/MCU_code/PlatformIO_code/download/src",
                     "/home/shashwathsuresh/.platformio/packages/framework-arduinoteensy/libraries/LittleFS/src",
                     "/home/shashwathsuresh/.platformio/packages/framework-arduinoteensy/libraries/SPI",
                     "/home/shashwathsuresh/.platformio/packages/framework-arduinoteensy/cores/teensy4",
