@@ -1,31 +1,29 @@
 #include <algorithm>
 // #include "usb_serial.h"
 #include <vector>
-/*
-  adapted from Teensy4 arduino examples: LittleFS  datalogger
- 
- This code is used to write the weights into MCU
+#include "filesys.h"
 
-
- */
-#include <LittleFS.h>
 LittleFS_Program myfs;
 
-// NOTE: This option is only available on the Teensy 4.0, Teensy 4.1 and Teensy Micromod boards.
-// With the additonal option for security on the T4 the maximum flash available for a
-// program disk with LittleFS is 960 blocks of 1024 bytes
-#define PROG_FLASH_SIZE 1024 * 1024 * 4  // Specify size to use of onboard Teensy Program Flash chip \
-                                         // This creates a LittleFS drive in Teensy PCB FLash.
-char terminateChar = '!';
-const int bufferLength = 300000;
 int phase = 0;
 File dataFile;  // Specifes that dataFile is of File type
-int record_count = 0;
 uint linesize = 0;
-bool write_data = false;
+bool write_data = false;// Represents whether data should be written or not
 uint32_t diskSize;
 std::vector<uint> line_points;
 int line_size = 0;
+
+/// @brief A reinit function, that is called after writing is complete, so a restart between writes is not needed.
+void reinit_vars() {
+  int phase = 0;
+  uint linesize = 0;
+  bool write_data = false;// Represents whether data should be written or not  
+  for (auto line_point : line_points) {
+    line_point = 0;
+  }
+  int line_size = 0;
+}
+
 void write_vector_byte(std::vector<byte>& weights) {
   if (dataFile) {
     char buffer[weights.size()];
@@ -35,6 +33,7 @@ void write_vector_byte(std::vector<byte>& weights) {
     dataFile.write(buffer, weights.size());
   }
 }
+
 void write_int(int& number) {
   if (dataFile) {
     char byteArray[sizeof(int)];
@@ -46,6 +45,7 @@ void write_int(int& number) {
     dataFile.write(byteArray, sizeof(int));
   }
 }
+
 void write_vector_int(std::vector<int>& data) {
   if (dataFile) {
     for (int d : data) {
@@ -71,16 +71,16 @@ void write_float(float& data) {
     dataFile.write(byteArray, sizeof(float));
   }
 }
+
+/// @brief Log coordinator function
 void logCoordinator() {
-  // Serial.println("entering coordinator");
-  char serialBuffer[bufferLength];
-  Serial.readBytesUntil(terminateChar, serialBuffer, bufferLength);
+  char serialBuffer[MAX_BUFFER_LEN];
+  Serial.readBytesUntil(TERMINATE_CHAR, serialBuffer, MAX_BUFFER_LEN);
   int phases = std::atoi(serialBuffer);
   line_size += 4;
-  // Serial.println(phases);
   write_int(phases);
   for(int i = 0;i < phases; i++){
-    Serial.readBytesUntil(terminateChar, serialBuffer, bufferLength);
+    Serial.readBytesUntil(TERMINATE_CHAR, serialBuffer, MAX_BUFFER_LEN);
     int count = std::atoi(serialBuffer);
     line_size += 4;
     write_int(count);    
@@ -90,9 +90,9 @@ void logCoordinator() {
   for(int i =0; i < phases; i++){
     c = 0;
     index = 0;
-    Serial.readBytesUntil(terminateChar, serialBuffer, bufferLength);
+    Serial.readBytesUntil(TERMINATE_CHAR, serialBuffer, MAX_BUFFER_LEN);
     std::vector<byte> map;
-    for (int i = 0; i < bufferLength; i++) {
+    for (int i = 0; i < MAX_BUFFER_LEN; i++) {
       while (serialBuffer[index] != ' ') index++;
       char substring[index - i + 1];
       strncpy(substring, &serialBuffer[i], index - i);
@@ -109,12 +109,12 @@ void logCoordinator() {
   }
   int len = 0;
   for(int i = 0; i < phases; i++){
-    Serial.readBytesUntil(terminateChar, serialBuffer, bufferLength);
+    Serial.readBytesUntil(TERMINATE_CHAR, serialBuffer, MAX_BUFFER_LEN);
     index = 0;
     c = 0;
     len = 0;
     std::vector<int> padding_pos;
-    for (int i = 0; i < bufferLength; i++) {
+    for (int i = 0; i < MAX_BUFFER_LEN; i++) {
       while (serialBuffer[index] != ' ') index++;
       char substring[index - i + 1];
       strncpy(substring, &serialBuffer[i], index - i);
@@ -137,13 +137,13 @@ void logCoordinator() {
       write_vector_int(padding_pos);    
     }
   }
-  Serial.readBytesUntil(terminateChar, serialBuffer, bufferLength);
+  Serial.readBytesUntil(TERMINATE_CHAR, serialBuffer, MAX_BUFFER_LEN);
   int len_end_pos = 0;
   index = 0;
   c = 0;
   len = 0;
   std::vector<int> end_pos;
-  for (int i = 0; i < bufferLength; i++) {
+  for (int i = 0; i < MAX_BUFFER_LEN; i++) {
     while (serialBuffer[index] != ' ') index++;
     char substring[index - i + 1];
     strncpy(substring, &serialBuffer[i], index - i);
@@ -170,11 +170,11 @@ void logCoordinator() {
     line_size += end_pos.size() * 4;
     write_vector_int(end_pos);
   }
-  Serial.readBytesUntil(terminateChar, serialBuffer, bufferLength);
+  Serial.readBytesUntil(TERMINATE_CHAR, serialBuffer, MAX_BUFFER_LEN);
   index = 0;
   c = 0;
   std::vector<int> zero_points;
-  for (int i = 0; i < bufferLength; i++) {
+  for (int i = 0; i < MAX_BUFFER_LEN; i++) {
     while (serialBuffer[index] != ' ') index++;
     char substring[index - i + 1];
     strncpy(substring, &serialBuffer[i], index - i);
@@ -188,11 +188,11 @@ void logCoordinator() {
   }
   line_size += zero_points.size() * 4;
   write_vector_int(zero_points);
-  Serial.readBytesUntil(terminateChar, serialBuffer, bufferLength);
+  Serial.readBytesUntil(TERMINATE_CHAR, serialBuffer, MAX_BUFFER_LEN);
   index = 0;
   c = 0;
   std::vector<float> scales;
-  for (int i = 0; i < bufferLength; i++) {
+  for (int i = 0; i < MAX_BUFFER_LEN; i++) {
     while (serialBuffer[index] != ' ') index++;
     char substring[index - i + 1];
     strncpy(substring, &serialBuffer[i], index - i);
@@ -228,15 +228,16 @@ void logCoordinator() {
   String filename = "Coordinator.bin";
   dataFile = myfs.open(filename.c_str(), FILE_WRITE);
 }
+
 void logData(int& phase) {
   if (phase == 0) {  // handle weights
-    char serialBuffer[bufferLength];
-    Serial.readBytesUntil(terminateChar, serialBuffer, bufferLength);
+    char serialBuffer[MAX_BUFFER_LEN];
+    Serial.readBytesUntil(TERMINATE_CHAR, serialBuffer, MAX_BUFFER_LEN);
     int len = 0;
     int index = 0;
     int count = 0;
     std::vector<byte> weights;
-    for (int i = 0; i < bufferLength; i++) {
+    for (int i = 0; i < MAX_BUFFER_LEN; i++) {
       while (serialBuffer[index] != ' ') index++;
       char substring[index - i + 1];
       strncpy(substring, &serialBuffer[i], index - i);
@@ -260,7 +261,7 @@ void logData(int& phase) {
     phase += 1;
   } else if (phase == 1) {  //handle bias
     char serialBuffer[50];
-    Serial.readBytesUntil(terminateChar, serialBuffer, 50);
+    Serial.readBytesUntil(TERMINATE_CHAR, serialBuffer, 50);
     int bias = std::atoi(serialBuffer);
     write_int(bias);
     // Serial.print("bias:");
@@ -269,7 +270,7 @@ void logData(int& phase) {
     phase += 1;
   } else if (phase == 2) {  //handle which kernel
     char serialBuffer[50];
-    Serial.readBytesUntil(terminateChar, serialBuffer, 50);
+    Serial.readBytesUntil(TERMINATE_CHAR, serialBuffer, 50);
     int which = std::atoi(serialBuffer);
     write_int(which);
     // Serial.print("which kernel:");
@@ -278,7 +279,7 @@ void logData(int& phase) {
     phase += 1;
   } else if (phase == 3) {  //handle count
     char serialBuffer[50];
-    Serial.readBytesUntil(terminateChar, serialBuffer, 50);
+    Serial.readBytesUntil(TERMINATE_CHAR, serialBuffer, 50);
     int count = std::atoi(serialBuffer);
     write_int(count);
     // Serial.print("count:");
@@ -292,7 +293,7 @@ void logData(int& phase) {
       phase += 1;
     } else {
       char serialBuffer[50];
-      Serial.readBytesUntil(terminateChar, serialBuffer, 50);
+      Serial.readBytesUntil(TERMINATE_CHAR, serialBuffer, 50);
       int index = 0;
       int count = 0;
       std::vector<int> data;
@@ -317,7 +318,7 @@ void logData(int& phase) {
   } else if (phase == 5) {  //type info
     char serialBuffer[1000];
     byte type = 0;
-    Serial.readBytesUntil(terminateChar, serialBuffer, 1000);
+    Serial.readBytesUntil(TERMINATE_CHAR, serialBuffer, 1000);
     if (serialBuffer[0] == 'C') {  //convolution
       type = 0;
     } else if (serialBuffer[0] == 'L') {  //Linear
@@ -402,7 +403,7 @@ void logData(int& phase) {
     std::vector<byte> zero_points;
     float m, s_out;
     char serialBuffer[200];
-    Serial.readBytesUntil(terminateChar, serialBuffer, bufferLength);
+    Serial.readBytesUntil(TERMINATE_CHAR, serialBuffer, MAX_BUFFER_LEN);
     int index = 0;
     int count = 0;
     for (int i = 0; i < 200; i++) {
@@ -451,110 +452,23 @@ void logData(int& phase) {
   }
 }
 
-void stopLogging() {
-  Serial.println("\nStopped Logging Data!!!");
-  write_data = false;
-  // Closes the data file.
+// TODO: Call this function
+/// @brief Stores the coordinator lines in a file for later use
+void log_coor_lines(){
+  dataFile = myfs.open("coorlines.txt", FILE_WRITE);
+  if (dataFile)
+  {
+    Serial.println("\nLogging coor_lines!!!");
+    for (uint i : line_points) {
+      dataFile.println(i);
+      delay(100);
+    }
+  }
   dataFile.close();
-  Serial.printf("Records written = %d\n", record_count);
 }
 
-
-void dumpLog() {
-  char serialBuffer[100];
-  Serial.println("\nDumping Log!!!");
-  Serial.println("\nPlease enter the name of the log you want to see:");
-  while (!Serial.available()) {};
-  Serial.readBytesUntil(terminateChar, serialBuffer, 100);
-  // open the file.
-  Serial.println(serialBuffer);
-  dataFile = myfs.open(serialBuffer, FILE_READ);
-  // if the file is available, write to it:
-  if (dataFile) {
-    while (dataFile.available()) {
-      Serial.println(dataFile.read(), DEC);
-      Serial.print(' ');
-    }
-    dataFile.close();
-  }
-  // if the file isn't open, pop up an error:
-  else {
-    Serial.println("error opening datalog,datalog not found!");
-  }
-}
-void printSpaces(int num) {
-  for (int i = 0; i < num; i++) {
-    Serial.print(" ");
-  }
-}
-void menu() {
-  Serial.println();
-  Serial.println("Menu Options:");
-  Serial.println("\tl - List files on disk");
-  Serial.println("\te - Erase files on disk");
-  Serial.println("\ts - Start Logging data (Restarting logger will append records to existing log)");
-  // Serial.println("\tx - Stop Logging data");
-  Serial.println("\td - Dump Log");
-  Serial.println("\th - Menu");
-  Serial.println();
-}
-void printDirectory2(File dir, int numSpaces) {
-  while (true) {
-    File entry = dir.openNextFile();
-    if (!entry) {
-      //Serial.println("** no more files **");
-      break;
-    }
-    printSpaces(numSpaces);
-    Serial.print(entry.name());
-    if (entry.isDirectory()) {
-      Serial.println("/");
-      printDirectory2(entry, numSpaces + 2);
-    } else {
-      // files have sizes, directories do not
-      printSpaces(36 - numSpaces - strlen(entry.name()));
-      Serial.print("  ");
-      Serial.println(entry.size(), DEC);
-    }
-    entry.close();
-  }
-}
-void printDirectory(FS& fs) {
-  Serial.println("Directory\n---------");
-  printDirectory2(fs.open("/"), 0);
-  Serial.println();
-}
-void listFiles() {
-  Serial.print("\n Space Used = ");
-  Serial.println(myfs.usedSize() / 1024);
-  Serial.print("Filesystem Size = ");
-  Serial.println(myfs.totalSize() / 1024);
-
-  printDirectory(myfs);
-}
-
-void eraseFiles() {
-  if(myfs.exists("Coordinator.bin")){
-    myfs.remove("Coordinator.bin");
-  }
-  else{
-    myfs.quickFormat();  // performs a quick format of the created di
-  }
-  Serial.println("\nFiles erased !");
-}
-
-
+/// @brief Initialize the filesystem on the flash
 void setup_filesys() {
-
-  // Open serial communications and wait for port to open:
-  // Serial.begin(115200);
-  // while (!Serial) {
-  //   // wait for serial port to connect.
-  // }
-  // Serial.println("\n" __FILE__ " " __DATE__ " " __TIME__);
-
-  // Serial.println("Initializing LittleFS ...");
-
 // see if the Flash is present and can be initialized:
 // lets check to see if the T4 is setup for security first
 #if ARDUINO_TEENSY40
@@ -574,42 +488,9 @@ void setup_filesys() {
 
   // checks that the LittFS program has started with the disk size specified
   if (!myfs.begin(diskSize)) {
-    // Serial.printf("Error starting %s\n", "PROGRAM FLASH DISK");
+    Serial.printf("Error starting %s\n", "PROGRAM FLASH DISK");
     while (1) {
       // Error, so don't do anything more - stay stuck here
     }
   }
-  // Serial.println("LittleFS initialized.");
-
-  // menu();
 }
-
-// void loop()
-// {
-//   if ( Serial.available() ) {
-//     char rr;
-//     rr = Serial.read();
-//     switch (rr) {
-//       case 'l': listFiles(); break;
-//       case 'e': eraseFiles(); break;
-//       case 's':
-//         {
-//           Serial.println("\nLogging Data!!!");
-//           write_data = true;   // sets flag to continue to write data until new command is received
-//           // opens a file or creates a file if not present,  FILE_WRITE will append data to
-//           // to the file created.
-//           dataFile = myfs.open("datalog.txt", FILE_WRITE);
-//           logData();
-//         }
-//         break;
-//       case 'x': stopLogging(); break;
-//       case 'd': dumpLog(); break;
-//       case '\r':
-//       case '\n':
-//       case 'h': menu(); break;
-//     }
-//     while (Serial.read() != -1) ; // remove rest of characters.
-//   }
-
-//   if(write_data) logData();
-// }
