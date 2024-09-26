@@ -3,7 +3,7 @@
 #include <vector>
 #include "filesys.h"
 
-LittleFS_Program myfs;
+LittleFS_Program myfs; //File system instance
 
 int phase = 0;
 File dataFile;  // Specifes that dataFile is of File type
@@ -14,14 +14,8 @@ std::vector<uint> line_points;
 int line_size = 0;
 
 /// @brief A reinit function, that is called after writing is complete, so a restart between writes is not needed.
-void reinit_vars() {
-  int phase = 0;
-  uint linesize = 0;
-  bool write_data = false;// Represents whether data should be written or not  
-  for (auto line_point : line_points) {
-    line_point = 0;
-  }
-  int line_size = 0;
+void reinit_line_points() {
+  line_points.clear();
 }
 
 void write_vector_byte(std::vector<byte>& weights) {
@@ -70,6 +64,23 @@ void write_float(float& data) {
     }
     dataFile.write(byteArray, sizeof(float));
   }
+}
+
+
+/// @brief Stores the coordinator lines in a file for later use
+void log_coor_lines(){
+  String filename = "coor_lines.txt";
+  dataFile = myfs.open(filename.c_str(), FILE_WRITE);
+  if (dataFile)
+  {
+    Serial.println("\nLogging coor_lines");
+    for (uint i : line_points) {
+      dataFile.println(i);
+      delay(100);
+    }
+    Serial.println("\ncoor_lines stored in coor_lines.txt");
+  }
+  dataFile.close();
 }
 
 /// @brief Log coordinator function
@@ -221,6 +232,7 @@ void logCoordinator() {
       for (uint i : line_points) {
         Serial.println(i);
       }
+      reinit_line_points();
     }
     // Serial.println("\n --line written into MCU--");
     // Serial.println(linesize);
@@ -443,6 +455,7 @@ void logData(int& phase) {
         for (uint i : line_points) {
           Serial.println(i);
         }
+        reinit_line_points();
       }
       // Serial.println("\n --line written into MCU--");
       // Serial.println(linesize);
@@ -450,21 +463,6 @@ void logData(int& phase) {
     String filename = "datalog.bin";
     dataFile = myfs.open(filename.c_str(), FILE_WRITE);
   }
-}
-
-// TODO: Call this function
-/// @brief Stores the coordinator lines in a file for later use
-void log_coor_lines(){
-  dataFile = myfs.open("coorlines.txt", FILE_WRITE);
-  if (dataFile)
-  {
-    Serial.println("\nLogging coor_lines!!!");
-    for (uint i : line_points) {
-      dataFile.println(i);
-      delay(100);
-    }
-  }
-  dataFile.close();
 }
 
 /// @brief Initialize the filesystem on the flash

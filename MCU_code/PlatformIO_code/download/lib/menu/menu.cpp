@@ -91,6 +91,7 @@ void dumpLog() {
 void eraseFiles() {
   if(myfs.exists("Coordinator.bin")){
     myfs.remove("Coordinator.bin");
+    myfs.remove("coor_lines.txt");
   }
   else{
     myfs.quickFormat();  // performs a quick format of the created di

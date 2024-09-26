@@ -2,11 +2,10 @@
 #define FILESYS_H
 
 /*
-  adapted from Teensy4 arduino examples: LittleFS  datalogger
- 
- This code is used to write the weights into MCU
+ adapted from Teensy4 arduino examples: LittleFS_Program_Simple_Datalogger:
+ https://github.com/PaulStoffregen/LittleFS/tree/main/examples/Simple_DataLogger/LittleFS_Program_Simple_Datalogger
 
-
+ This code is used to write the weights generated into MCUs
  */
 
 #include <LittleFS.h>
@@ -38,5 +37,6 @@ extern void write_float(float& data);
 extern void logCoordinator();
 extern void logData(int& phase);
 extern void setup_filesys();
+extern void reinit_line_points();
 
 #endif
