@@ -25,11 +25,11 @@ extern LittleFS_Program myfs;
 extern int phase;
 extern File dataFile;  // Specifes that dataFile is of File type
 extern int record_count;
-extern uint linesize_coordinator;
+extern uint linesize_data;
 extern bool write_data;// Represents whether data should be written or not
 extern uint32_t diskSize;
 extern std::vector<uint> line_points;
-extern int linesize_data;
+extern int linesize_coordinator;
 
 extern void write_vector_byte(std::vector<byte>& weights);
 extern void write_int(int& number);
