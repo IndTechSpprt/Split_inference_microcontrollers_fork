@@ -2,7 +2,7 @@ use crate::util::{coordinator_send, decode_u128, send_to_all_workers, wait_for_s
 use algo::calculations::batchnorm;
 use algo::{Mapping, QuantizedMapping, QuantizedWeightUnit, WeightUnit};
 use serde::{Deserialize, Serialize};
-use std::fs::OpenOptions;
+use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::ops::{Add, AddAssign};
 use std::result;
@@ -494,13 +494,17 @@ impl Worker<QuantizedWeightUnit, u8> {
         rec: &mpsc::Receiver<Message<u8>>,
         id: u8,
         mut calculation_duration: &mut TimeDelta,
+        input_len_file: &mut File,
+        res_len_file: &mut File
     ) -> Vec<u8> {
         let max = (6. / self.weights[0].s_out).round().clamp(0., 255.) as u8;
+        input_len_file.write_fmt(format_args!("{}\n",self.inputs.len())).unwrap();
         let temp = Instant::now();
         let mut result = algo::operations::distributed_computation_quant(self.inputs, self.weights);
         calculation_duration.add_assign(TimeDelta::new(temp.elapsed().as_secs() as i64,temp.elapsed().subsec_nanos()).unwrap());
         // println!("time spent on calculation:{:?}",calculation_duration.to_std().unwrap());
-        println!("id :{:?}, len:{:?}",id,result.len());
+        println!("id: {:?}, len: {:?}",id,result.len());
+        res_len_file.write_fmt(format_args!("{}\n",result.len())).unwrap();
         if self.operations.contains(&1) {
             for i in 0..result.len() {
                 result[i] = result[i].clamp(0, max); //todo change rulu int relu6
