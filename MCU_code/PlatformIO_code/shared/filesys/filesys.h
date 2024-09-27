@@ -20,14 +20,16 @@ extern LittleFS_Program myfs;
 #define TERMINATE_CHAR '!'
 #define MAX_BUFFER_LEN 300000
 
+#define COOR_LINES_FILENAME "coor_lines.txt"
+
 extern int phase;
 extern File dataFile;  // Specifes that dataFile is of File type
 extern int record_count;
-extern uint linesize;
+extern uint linesize_coordinator;
 extern bool write_data;// Represents whether data should be written or not
 extern uint32_t diskSize;
 extern std::vector<uint> line_points;
-extern int line_size;
+extern int linesize_data;
 
 extern void write_vector_byte(std::vector<byte>& weights);
 extern void write_int(int& number);
