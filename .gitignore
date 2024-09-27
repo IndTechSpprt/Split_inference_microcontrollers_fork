@@ -11,3 +11,7 @@ pc_code/Simulation/Simu_q/worker_1.json
 pc_code/Simulation/Simu_q/worker_2.json
 pc_code/Algorithms/test_references/141.txt
 .vscode/settings.json
+MCU_code/PlatformIO_code/full-pio.code-workspace
+MCU_code/PlatformIO_code/.vscode/c_cpp_properties.json
+MCU_code/PlatformIO_code/download/.vscode/c_cpp_properties.json
+MCU_code/PlatformIO_code/shared/.vscode/c_cpp_properties.json
