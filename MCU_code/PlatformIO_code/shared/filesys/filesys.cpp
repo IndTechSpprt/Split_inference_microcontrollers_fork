@@ -80,8 +80,9 @@ void write_float(float& data) {
 }
 
 
-/// @brief Stores the coordinator lines in a file for later use
-void log_lines(String filename){
+/// @brief Store `line_points` in a text file with `\n` as the separator
+/// @param filename 
+void log_line_points(String filename){
   dataFile = myfs.open(filename.c_str(), FILE_WRITE);
   if (dataFile)
   {
@@ -100,6 +101,30 @@ void log_lines(String filename){
     Serial.print(filename);
     Serial.println("!!!!!!!!!!");
   }
+}
+
+/// @brief Reads the file line by line, storing the data in the provided vector
+/// @param filename name of file to read
+/// @param to_store reference to vector of ints where read data is to be stored
+void read_line_by_line(String filename, std::vector<int>& vec_to_init){
+  dataFile = myfs.open(filename.c_str(), FILE_READ);
+    if (dataFile) {
+      while (dataFile.available())
+      {
+        vec_to_init.push_back(std::atoi(dataFile.readStringUntil('\n').c_str()));
+      }
+      dataFile.close();
+    }
+    else {
+      // No coor_lines present, so we can not proceed with inference
+      // Error message on serial and then hang
+      Serial.println("-------------!!!!!!!!!!!!!!!!!!!!!!------------------");
+      Serial.print("FATAL ERROR, ");
+      Serial.print(filename);
+      Serial.print(" not present, can not proceed!");
+      Serial.println("-------------!!!!!!!!!!!!!!!!!!!!!!------------------");
+      while (true) {}; // Suspend inference (manual jamming of the MCU)
+    }
 }
 
 /// @brief Log coordinator function
@@ -247,7 +272,7 @@ void logCoordinator() {
     if (Serial.peek() == '!') {
       Serial.read();
       write_data = false;
-      log_lines(COOR_LINES_FILENAME);
+      log_line_points(COOR_LINES_FILENAME);
       reinit_line_points();
     }
     // Serial.println("\n --line written into MCU--");
@@ -471,6 +496,7 @@ void logData(int& phase) {
         for (uint i : line_points) {
           Serial.println(i);
         }
+        log_line_points(LINES_FILENAME);
         reinit_line_points();
       }
       // Serial.println("\n --line written into MCU--");
