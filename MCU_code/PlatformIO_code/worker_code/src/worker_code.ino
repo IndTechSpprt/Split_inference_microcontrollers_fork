@@ -1,10 +1,6 @@
 #include "read.h"
 #include "calculation.h"
 #include "communication.h"
-#include "menu.h"
-
-WriteTypes type = Stop; //Current write type
-
 byte* input_distribution;
 byte* overflow = nullptr;  // Initialize overflow pointer
 bool overflow_flag = false;
@@ -17,9 +13,6 @@ void setup() {
     byte* temp = new(std::nothrow) byte[450 * 1024];
     if(temp != nullptr) {Serial.println("success");}
     delete[] temp;
-    // Initialize coor_lines and lines
-    read_line_by_line(COOR_LINES_FILENAME, coor_lines);
-    read_line_by_line(LINES_FILENAME, lines);
   }
   for (int j = 0; j < 53; j++) {
     Serial.print("current layer:");
@@ -199,7 +192,19 @@ void setup() {
 }
 void loop() {
   if (Serial.available()) {
-    menu_handler();
+    char rr;
+    rr = Serial.read();
+    switch (rr) {
+      case 'l': listFiles(); break;
+      case 'e': eraseFiles(); break;
+      // case 'x': stopLogging(); break;
+      case 'd': dumpLog(); break;
+      case '\r':
+      case '\n':
+      case 'h': menu(); break;
+    }
+    while (Serial.read() != -1)
+      ;  // remove rest of characters.
   }
   // sendUDPMessage("1 to 2", ip2, localPort);
   // sendUDPMessage("1 to 3", ip3, localPort);

@@ -20,20 +20,16 @@ byte mac[] = {
 unsigned int serverport = 8080;  // Local port to listen on for UDP packets
 EthernetClient client;
 bool permission_flag = false;
-/// @brief Print device information on serial to help identify the MCU
-void print_device_information() {
-  Serial.println("\nDevice Information:");
-  Serial.print("MCU ID: ");
-  Serial.print(mcu_id);
-  Serial.print(" IP: ");
-  Serial.println(ip);
-}
 void setup_communication() {
   Ethernet.setStackHeap(10 * 1024);
   Ethernet.setSocketSize(8 * 1024);
   Ethernet.setSocketNum(1);
   Ethernet.begin(mac,ip);
-  print_device_information();
+  Serial.println("\nDevice Information:");
+  Serial.print("MCU ID: ");
+  Serial.print(mcu_id);
+  Serial.print(" IP: ");
+  Serial.println(ip);
   Serial.println("connecting...");
   while (!client.connect(server, serverport)) {} //connect to server
   while (!client.available()) {} //read a byte from server to indicate communication established
