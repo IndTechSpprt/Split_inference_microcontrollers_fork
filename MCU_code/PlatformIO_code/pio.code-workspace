@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "download"
+		},
+		{
+			"path": "shared"
+		},
+		{
+			"path": "worker_code"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"cstddef": "cpp",
+			"functional": "cpp"
+		}
+	}
+}
