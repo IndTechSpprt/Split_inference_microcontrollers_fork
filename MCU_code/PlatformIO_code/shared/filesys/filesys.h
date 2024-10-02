@@ -21,6 +21,7 @@ extern LittleFS_Program myfs;
 #define MAX_BUFFER_LEN 300000
 
 #define COOR_LINES_FILENAME "coor_lines.txt"
+#define LINES_FILENAME "lines.txt"
 
 extern int phase;
 extern File dataFile;  // Specifes that dataFile is of File type
@@ -40,5 +41,6 @@ extern void logCoordinator();
 extern void logData(int& phase);
 extern void setup_filesys();
 extern void reinit_line_points();
+extern void read_line_by_line(String filename, std::vector<int>& vec_to_init);
 
 #endif
