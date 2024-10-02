@@ -1,60 +1,31 @@
+// Download weights application, sets up the file system and provides the user a menu that allows interaction with the filesystem and MCU, to download,\
+// erase and view the stored files.
+
 #include "worker_struct.h"
 #include "filesys.h"
-byte type = 0;
+#include "menu.h"
+
+WriteTypes type = Stop; //Current write type
+
 void setup() {
-  // 启动串口通讯
   Serial.begin(9600);
   setup_filesys();
-  Serial.println("---ready to download---");
+  Serial.println("---Ready to download, press 'h' to display the menu---");
 }
+
 void loop() {
+  // Write data can be updated in the menu handler, making two checks necessary
+  // When nothing is being written, call the menu handler, which updates the type
   if (Serial.available() && !write_data) {
-    char rr;
-    rr = Serial.read();
-    switch (rr) {
-      case 'l': listFiles(); break;
-      case 'e': eraseFiles(); break;
-      case 's':
-        {
-          Serial.println("\nLogging Data!!!");
-          write_data = true;  // sets flag to continue to write data until new command is received
-          // opens a file or creates a file if not present,  FILE_WRITE will append data to
-          // to the file created.
-          String filename = "datalog.bin";
-          type = 1;
-          dataFile = myfs.open(filename.c_str(), FILE_WRITE);
-          delay(1000);
-          // logData(phase);
-        }
-        break;
-      // case 'x': stopLogging(); break;
-      case 'c' :{
-          Serial.println("\nLogging Coordinator!!!");
-          write_data = true;  // sets flag to continue to write data until new command is received
-          // opens a file or creates a file if not present,  FILE_WRITE will append data to
-          // to the file created.
-          String filename = "Coordinator.bin";
-          type = 2;
-          dataFile = myfs.open(filename.c_str(), FILE_WRITE);
-          delay(1000);
-      }
-      break;
-      case 'd': dumpLog(); break;
-      case '\r':
-      case '\n':
-      case 'h': menu(); break;
-    }
-    while (Serial.read() != -1);  // remove rest of characters.
+    menu_handler();
   }
-  if (Serial.available() && write_data){
-    if(type == 1){
-     logData(phase); 
+
+  // Write only when allowed, disable the menu handler
+  if (Serial.available() && write_data) {
+    switch (type) {
+      case Data: logData(phase); break;
+      case Coordinator: logCoordinator(); break;
+      default: write_data = false; break;
     }
-    else if(type == 2){
-      logCoordinator();
-    }
-    else{
-      write_data = false;
-    }
-  } 
+  }
 }

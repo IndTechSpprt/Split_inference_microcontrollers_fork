@@ -5,6 +5,7 @@ use crate::util::{
 use algo::util::{pre_processing, read_and_store_image};
 use algo::{QuantizedMapping, QuantizedWeightUnit};
 use chrono::prelude::*;
+use core::num;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::sync::{mpsc, Arc, Mutex};
@@ -179,6 +180,8 @@ pub fn c_1_simulation_quant(num_workers: u8, end: usize) {
         let (worker_sender, worker_receiver) = mpsc::channel::<Message<u8>>();
         let coordinator_sender_clone = coordinator_sender.clone();
         let file_name = format!("pc_code/Simulation/Simu_q/worker_{:?}.json", worker_id);
+        let mut res_file = File::create(format!("pc_code/Simulation/Simu_q/res_len_{}.txt",worker_id)).unwrap();
+        let mut in_file = File::create(format!("pc_code/Simulation/Simu_q/input_len_{}.txt",worker_id)).unwrap();
         let handle = thread::spawn(move || {
             let mut phase = 0;
             let mut buffer = Vec::new();
@@ -207,7 +210,7 @@ pub fn c_1_simulation_quant(num_workers: u8, end: usize) {
                 if phase == 52 {
                     worker.adaptive_pooling_q();
                 }
-                buffer = worker.work_q(&coordinator_sender_clone, &worker_receiver, worker_id,&mut calc_duration); //buffer is the data received while working
+                buffer = worker.work_q(&coordinator_sender_clone, &worker_receiver, worker_id,&mut calc_duration, &mut in_file, &mut res_file); //buffer is the data received while working
                 phase += 1;
             }
             println!("worker{:?}, exited", worker_id);

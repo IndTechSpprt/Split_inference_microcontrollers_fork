@@ -1,6 +1,10 @@
 #include "read.h"
 #include "calculation.h"
 #include "communication.h"
+#include "menu.h"
+
+WriteTypes type = Stop; //Current write type
+
 byte* input_distribution;
 byte* overflow = nullptr;  // Initialize overflow pointer
 bool overflow_flag = false;
@@ -13,15 +17,18 @@ void setup() {
     byte* temp = new(std::nothrow) byte[450 * 1024];
     if(temp != nullptr) {Serial.println("success");}
     delete[] temp;
+    // Initialize coor_lines and lines
+    read_line_by_line(COOR_LINES_FILENAME, coor_lines);
+    read_line_by_line(LINES_FILENAME, lines);
   }
   for (int j = 0; j < 53; j++) {
-    Serial.print("current layer:");
+    Serial.print("Current layer: ");
     Serial.println(j);
     if(j < 52){
         if(j == 0) input_distribution = new byte[input_length[0]];
         {
             Serial.print("rec_count is: ");
-            Serial.print(rec_count);
+            Serial.println(rec_count);
             Serial.println("not enough inputs, receiving...");
             if(input_distribution == nullptr){
               while(1){
@@ -68,7 +75,7 @@ void setup() {
         Serial.println("premission granted, sending results...");
         if (j < 51) {
           char to_send[MESSAGE_SIZE];
-          to_send[0] = mcu_id;
+          to_send[0] = MCU_ID;
           int send_count = 0;
           Mapping mapping;
           // Serial.println("!!!!");
@@ -87,11 +94,11 @@ void setup() {
               if (mapping.padding_pos[i].size() > padding_pos_count && mapping.padding_pos[i][padding_pos_count] == k) {
                 //send zero point to other MCUs
                 // Serial.println("sending");
-                to_send[send_count + reserve_bytes] = mapping.zero_point[0];
+                to_send[send_count + RESERVED_BYTES] = mapping.zero_point[0];
                 send_count += 1;
-                if(send_count == MESSAGE_SIZE - reserve_bytes){
+                if(send_count == MESSAGE_SIZE - RESERVED_BYTES){
                   write_length(to_send,send_count);
-                  sendtoMCUs(to_send,mcu_mapped,mcu_id,input_distribution,rec_count,send_count);
+                  sendtoMCUs(to_send,mcu_mapped,MCU_ID,input_distribution,rec_count,send_count);
                   send_count = 0;
                 }
                 // Serial.println("send complete");
@@ -99,19 +106,19 @@ void setup() {
               } else {
                 if (core_count >= STACK_SIZE && overflow_flag) {
                   int count = 0;
-                  to_send[send_count + reserve_bytes] = read_byte(count);
+                  to_send[send_count + RESERVED_BYTES] = read_byte(count);
                   send_count += 1;
-                  if(send_count == MESSAGE_SIZE - reserve_bytes){
+                  if(send_count == MESSAGE_SIZE - RESERVED_BYTES){
                     write_length(to_send,send_count);
-                    sendtoMCUs(to_send,mcu_mapped,mcu_id,input_distribution,rec_count,send_count);
+                    sendtoMCUs(to_send,mcu_mapped,MCU_ID,input_distribution,rec_count,send_count);
                     send_count = 0;
                   }
                 } else {
-                  to_send[send_count + reserve_bytes] = result[core_count];
+                  to_send[send_count + RESERVED_BYTES] = result[core_count];
                   send_count += 1;
-                  if(send_count == MESSAGE_SIZE - reserve_bytes){
+                  if(send_count == MESSAGE_SIZE - RESERVED_BYTES){
                     write_length(to_send,send_count);
-                    sendtoMCUs(to_send,mcu_mapped,mcu_id,input_distribution,rec_count,send_count);
+                    sendtoMCUs(to_send,mcu_mapped,MCU_ID,input_distribution,rec_count,send_count);
                     send_count = 0;
                   }
                 }
@@ -125,23 +132,23 @@ void setup() {
             //send the rest of the data
             if(send_count != 0 ){
               write_length(to_send,send_count);
-              sendtoMCUs(to_send,mcu_mapped,mcu_id,input_distribution,rec_count,send_count);
+              sendtoMCUs(to_send,mcu_mapped,MCU_ID,input_distribution,rec_count,send_count);
               send_count = 0;
             }
           }
           if (overflow_flag) dataFile.close();
-          to_send[1] = 198; //signal the end
+          to_send[1] = Complete; //signal the end
           send_message_to_coordinator(to_send);
         }
         else if(j == 51){
           char to_send[MESSAGE_SIZE];
-          to_send[0] = mcu_id;
-          to_send[1] = 196;
+          to_send[0] = MCU_ID;
+          to_send[1] = Adaptive_Pooling;
           int send_count = 0;
           for(int i = 0; i < result_length[j];i++){
-            to_send[reserve_bytes + send_count] = result[i];
+            to_send[RESERVED_BYTES + send_count] = result[i];
             send_count += 1;
-            if(send_count == MESSAGE_SIZE - reserve_bytes){
+            if(send_count == MESSAGE_SIZE - RESERVED_BYTES){
               write_length(to_send,send_count);
               send_message_to_coordinator(to_send);
               send_count = 0;
@@ -152,7 +159,7 @@ void setup() {
             send_message_to_coordinator(to_send);
             send_count = 0; 
           }
-          to_send[1] = 198;
+          to_send[1] = Complete;
           send_message_to_coordinator(to_send);
         }
         ///////////////////////////
@@ -163,7 +170,7 @@ void setup() {
         reading_weight = true;
         {
           Serial.print("rec_count is: ");
-          Serial.print(rec_count);
+          Serial.println(rec_count);
           Serial.println("not enough inputs, receiving...");
           while(rec_count != input_length[j]){
               check_and_receive(rec_count,input_distribution);
@@ -192,19 +199,7 @@ void setup() {
 }
 void loop() {
   if (Serial.available()) {
-    char rr;
-    rr = Serial.read();
-    switch (rr) {
-      case 'l': listFiles(); break;
-      case 'e': eraseFiles(); break;
-      // case 'x': stopLogging(); break;
-      case 'd': dumpLog(); break;
-      case '\r':
-      case '\n':
-      case 'h': menu(); break;
-    }
-    while (Serial.read() != -1)
-      ;  // remove rest of characters.
+    menu_handler();
   }
   // sendUDPMessage("1 to 2", ip2, localPort);
   // sendUDPMessage("1 to 3", ip3, localPort);
