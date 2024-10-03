@@ -27,4 +27,4 @@ jobs:
         run: pio run --project-dir ./MCU_code/PlatformIO_code/download
 
       - name: Build "worker_code"
-        run: pio run -e teensy41_auto --project-dir ./MCU_code/PlatformIO_code/worker_code
+        run: pio run -e teensy41_autoconf --project-dir ./MCU_code/PlatformIO_code/worker_code

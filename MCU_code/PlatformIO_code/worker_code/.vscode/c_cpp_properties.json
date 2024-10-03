@@ -233,6 +233,7 @@
                 "MCU_ID=0",
                 "IP_END=124",
                 "MAC_END=0xEB",
+                "STATIC_LENGTHS",
                 "USB_SERIAL",
                 "ARDUINO=10805",
                 "TEENSYDUINO=159",
