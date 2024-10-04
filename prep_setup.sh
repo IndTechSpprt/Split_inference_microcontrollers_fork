@@ -19,27 +19,32 @@ case $ynconn in
         exit;;
 esac
 
-echo "configuring teensy 4.1 as $mcu_role $mcu_id"
+echo "configuring Teensy 4.1 as $mcu_role $mcu_id"
 
 cd ./MCU_code/PlatformIO_code/download
 pio run --target upload
 echo "Waiting for COM connection"
 sleep 5 &
 wait
-echo "Attempting to download weights..."
+
+echo "Download weights..."
 cd ../../
-python ./write_into_mcus.py /dev/ttyACM0
-echo "now flashing worker code and setting up communication..."
+python ./write_into_mcus.py /dev/ttyACM0 c
+sleep 5
+python ./write_into_mcus.py /dev/ttyACM0 w
+
+echo "Flashing worker code"
 cd ./PlatformIO_code/worker_code
 pio run --target upload
 sleep 5 &
 wait
+
 echo "checking if the configuration was successful"
 ip_last=$((124+$mcu_id))
 ping -c 5 169.254.71.$ip_last
 res=$?
 if [[ $res -eq 0 ]]; then
-    echo "----DONE!----"
+    echo "----DONE setting up $mcu_role $mcu_id!----"
 else
     echo "FAILED!"
     exit

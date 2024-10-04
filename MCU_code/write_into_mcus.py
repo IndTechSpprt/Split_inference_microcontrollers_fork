@@ -2,9 +2,16 @@ import serial
 import time
 import json
 import sys
+import os
 
-# Port passed as argument, later on, platform IO will take care of this
+# Port passed as argument
 com = sys.argv[1]
+
+# coordinator/worker
+to_download = sys.argv[2]
+
+#MCU ID
+id = os.environ['mcu_id']
 
 # Configure serial port (change COMx to match your Arduino's serial port)
 ser = serial.Serial(com, 9600, timeout=1)  # Adjust baud rate and port as needed
@@ -27,8 +34,23 @@ def read_data_from_arduino():
 
 # Main program
 if __name__ == "__main__":
-    file = "../pc_code/Simulation/Simu_q/Coordinator.json"
-    if file.endswith("worker_0.json"):
+    if to_download == "c":
+        file = "../pc_code/Simulation/Simu_q/Coordinator.json"
+        print("Erasing files...")
+        send_data_to_arduino('e')
+        time.sleep(2)
+        send_data_to_arduino('e')
+        time.sleep(5)
+        print(read_data_from_arduino())
+        send_data_to_arduino('c')
+        time.sleep(5)
+        print(read_data_from_arduino())
+    else: 
+        file = "../pc_code/Simulation/Simu_q/worker_"+id+".json"
+    if file.endswith("worker_"+id+".json"):
+        send_data_to_arduino('s')
+        time.sleep(5)
+        print(read_data_from_arduino())
         with open(file, 'r') as json_file:
             for line in json_file:
                 data = json.loads(line)
@@ -97,6 +119,7 @@ if __name__ == "__main__":
             send_data_to_arduino('!')
             read_data_from_arduino()
     if file.endswith("Coordinator.json"):
+        send_data_to_arduino('c')
         with open(file,'r') as coordinator_file:
             for line in coordinator_file:
                 d = json.loads(line)
@@ -148,4 +171,5 @@ if __name__ == "__main__":
             send_data_to_arduino('!')
             read_data_from_arduino()
 
+read_data_from_arduino()
 print('---------------')
