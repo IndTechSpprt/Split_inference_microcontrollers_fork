@@ -27,11 +27,15 @@ echo "Waiting for COM connection"
 sleep 5 &
 wait
 
-echo "Download weights..."
+echo "Download coordinator weights..."
 cd ../../
 python ./write_into_mcus.py /dev/ttyACM0 c
-sleep 5
+echo "Logging..."
+sleep 10
+echo "Download worker weights..."
 python ./write_into_mcus.py /dev/ttyACM0 w
+echo "Logging..."
+sleep 30
 
 echo "Flashing worker code"
 cd ./PlatformIO_code/worker_code
