@@ -24,7 +24,7 @@ echo "configuring Teensy 4.1 as $mcu_role $mcu_id"
 cd ./MCU_code/PlatformIO_code/download
 pio run --target upload
 echo "Waiting for COM connection"
-sleep 5 &
+sleep 5 
 wait
 
 echo "Download coordinator weights..."
@@ -39,12 +39,12 @@ sleep 30
 
 echo "Flashing worker code"
 cd ./PlatformIO_code/worker_code
-pio run --target upload
+pio run -e teensy41_autoconf --target upload
 sleep 5 &
 wait
 
 echo "checking if the configuration was successful"
-ip_last=$((124+$mcu_id))
+ip_last=$((124-$mcu_id))
 ping -c 5 169.254.71.$ip_last
 res=$?
 if [[ $res -eq 0 ]]; then
