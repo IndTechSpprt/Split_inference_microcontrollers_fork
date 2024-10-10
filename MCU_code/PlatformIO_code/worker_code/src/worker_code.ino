@@ -3,6 +3,24 @@
 #include "communication.h"
 #include "menu.h"
 
+extern unsigned long _heap_start;
+extern unsigned long _heap_end;
+extern char* __brkval;
+
+#define FREE_RAM_SAMPLES 1200
+volatile int ram_usage[FREE_RAM_SAMPLES];
+volatile int samples = 0;
+
+/// @brief  Determine how much RAM is available, by finding the difference between the end of the heap and the current allocated memory location
+void saveRAMFreeSpace() {
+  if (samples < FREE_RAM_SAMPLES) {
+    ram_usage[samples] = 524288 - ((char*)&_heap_end - __brkval);
+    samples+=1;
+  }
+}
+
+IntervalTimer ramUsageTimer; //Interval timer to keep track of RAM usage
+
 WriteTypes type = Stop; //Current write type
 
 byte* input_distribution;
@@ -11,6 +29,7 @@ bool overflow_flag = false;
 int rec_count = 0;
 int ino_count = 0;
 void setup() {
+  ramUsageTimer.begin(saveRAMFreeSpace,100000);//Save RAM usage at 1 ms intervals
   setup_filesys();
   {
     setup_communication(); 
@@ -195,7 +214,7 @@ void setup() {
         }
       }
     }
-
+  ramUsageTimer.end();
 }
 void loop() {
   if (Serial.available()) {
