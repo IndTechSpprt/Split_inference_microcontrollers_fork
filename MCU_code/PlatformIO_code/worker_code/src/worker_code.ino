@@ -28,6 +28,7 @@ byte* overflow = nullptr;  // Initialize overflow pointer
 bool overflow_flag = false;
 int rec_count = 0;
 int ino_count = 0;
+bool first_run = true;
 void setup() {
   ramUsageTimer.begin(saveRAMFreeSpace,100000);//Save RAM usage at 1 ms intervals
   setup_filesys();
@@ -40,6 +41,7 @@ void setup() {
     read_line_by_line(COOR_LINES_FILENAME, coor_lines);
     read_line_by_line(LINES_FILENAME, lines);
   }
+  int inference_start = millis();
   for (int j = 0; j < 53; j++) {
     Serial.print("Current layer: ");
     Serial.println(j);
@@ -214,10 +216,19 @@ void setup() {
         }
       }
     }
+  Serial.print("Inference took ");
+  Serial.print(((float) (millis() - inference_start)) / 1000.0 );
+  Serial.println("s");
   ramUsageTimer.end();
 }
 void loop() {
   if (Serial.available()) {
+    if (first_run) {
+      for (auto i = 0; i < FREE_RAM_SAMPLES; i++) {
+        Serial.print(ram_usage[i]);
+        Serial.print(", ");
+      }
+    }
     menu_handler();
   }
   // sendUDPMessage("1 to 2", ip2, localPort);
