@@ -36,6 +36,6 @@ if result_length == "" or input_length == "":
 lengths_h_file = open("./include/lengths.h","w")
 
 #write input lengths
-lengths_h_file.write("int input_length[53] = {"+input_length+"};\n")
-lengths_h_file.write("int result_length[53] = {"+result_length+"};")
+lengths_h_file.write("const int input_length[53] = {"+input_length+"};\n")
+lengths_h_file.write("const int result_length[53] = {"+result_length+"};")
 lengths_h_file.close()
