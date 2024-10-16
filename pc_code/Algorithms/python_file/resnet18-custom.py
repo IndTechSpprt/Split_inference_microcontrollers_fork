@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 from torchvision import transforms
 
-# Conver the input into a mini-batch so the model gets the image in the correct format
+# Convert the input into a mini-batch so the model gets the image in the correct format
 def prepare_input():
     #cheetah-resize-224/resize/224/00000011_224resized.png from https://www.kaggle.com/datasets/anshulmehtakaggl/wildlife-animals-images
     input_image = Image.open("../images/img2.png")
@@ -17,7 +17,7 @@ def prepare_input():
     input_tensor = preprocess(input_image)
     return input_tensor.unsqueeze(0) #Create a mini-batch - required by the model
 
-# Process the outputs so we get a suitable output
+# Process the inference outputs to get top 5 classes and probabilities
 def process_outputs(output):
     probs = torch.nn.functional.softmax(output[0], dim=0)
 
@@ -32,19 +32,23 @@ def process_outputs(output):
         out.append((categories[top5_ids[prob_cat_pair]], top5_probs[prob_cat_pair].item()))
     return out
 
+# Initialize ResNet18 with default weights (IMAGENET1K_V1)
 def init_resnet():
     resnet18_default = resnet18(weights="DEFAULT")
     return resnet18_default.eval()    
 
+# Run inference and return results
 def infer(input, model):
     output = model(input)
     return process_outputs(output)
 
+# Custom print function for tuples with the prediction class and probability
 def print_tuple_list(tuple_list):
     for tuple in tuple_list:
         print(str(tuple[0]) + ": " + str(tuple[1]), end=' ')
     print("")
 
+#Replace the ReLU layers with ReLU6 - as ReLU6 is already implemented by the framework and is a lighter option than ReLU
 #Based on https://discuss.pytorch.org/t/how-to-modify-a-pretrained-model/60509/10 and https://stackoverflow.com/questions/58297197/how-to-change-activation-layer-in-pytorch-pretrained-module/64161690#64161690
 def replace_relu(module):
     for attributes in dir(module):
