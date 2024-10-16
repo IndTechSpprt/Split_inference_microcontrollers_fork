@@ -1,12 +1,13 @@
 import torch
 import torch.nn as nn
 from PIL import Image
-from torchvision.models import mobilenet_v2
+from torchvision.models import alexnet
 import torch
 import torch.nn as nn
 import json
 import numpy as np
 from torchvision import transforms
+from replace_relu import replace_relu
 
 class IntermediateOutputsHook:
     def __init__(self):
@@ -41,7 +42,7 @@ def trace_weights(hook):
     layer_id = 0
     for layer in zip(hook.inputs, hook.outputs, hook.modules):
         layer_id += 1
-
+        print(layer[2])
         if isinstance(layer[2], torch.nn.Conv2d):
             kernel_size = layer[2].kernel_size
             padding = layer[2].padding
@@ -128,21 +129,28 @@ def trace_weights(hook):
         if isinstance(layer[2], torch.nn.ReLU6):
             input_shape = layer[0][0].shape
             mapping[f"{layer_id}"] = {"ReLU6": {"input_shape": input_shape}}
-        if layer_id == 141 :
-            output = layer[2](layer[0][0])
-            np.savetxt("../test_references/141.txt", layer[1][0].flatten().detach().numpy(), fmt='%.10f', delimiter=',')
+        if layer_id == 22 :
+            # output = layer[2](layer[0][0])
+            # np.savetxt("../test_references/141.txt", layer[1][0].flatten().detach().numpy(), fmt='%.10f', delimiter=',')
             break
         print(f"layer {layer_id} finished")
     return mapping
 
 
-# Load the pretrained MobileNetV2 model
-model = mobilenet_v2(pretrained=True)
+# Load the pretrained AlexNet model
+model = alexnet(weights="DEFAULT")
 model.eval()
+
+#switch out ReLu with ReLu6
+replace_relu(model)
+
+#Replace the AdaptiveAvgPool layer with AvgPool
+model.avgpool = torch.nn.AvgPool2d(1,1)
+
 # Instantiate the hook
 hook = IntermediateOutputsHook()
 hook.register(model)
-input_image = Image.open("../images/img.png")
+input_image = Image.open("../images/img2.png")
 input_image = input_image.convert("RGB")
 # print("Image Mode:", input_image.mode)
 preprocess = transforms.Compose([
@@ -172,7 +180,7 @@ print("Max scores:", max_scores)
 # Access the intermediate outputs
 intermediate_outputs = hook.outputs
 mapping = trace_weights(hook)
-with open('../json_files/141.json', 'w') as file:
+with open('../json_files/alexnet.json', 'w') as file:
     json.dump(mapping, file)
 print("-----")
 # Remove the hooks after you're done
