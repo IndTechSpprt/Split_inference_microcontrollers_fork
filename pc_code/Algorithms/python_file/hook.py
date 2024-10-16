@@ -7,7 +7,7 @@ import torch.nn as nn
 import json
 import numpy as np
 from torchvision import transforms
-from replace_relu import replace_relu
+from replace_relu import replace_relu_mod, replace_relu_attr
 
 class IntermediateOutputsHook:
     def __init__(self):
@@ -42,7 +42,6 @@ def trace_weights(hook):
     layer_id = 0
     for layer in zip(hook.inputs, hook.outputs, hook.modules):
         layer_id += 1
-        print(layer[2])
         if isinstance(layer[2], torch.nn.Conv2d):
             kernel_size = layer[2].kernel_size
             padding = layer[2].padding
@@ -141,11 +140,10 @@ def trace_weights(hook):
 model = alexnet(weights="DEFAULT")
 model.eval()
 
-#switch out ReLu with ReLu6
-replace_relu(model)
-
 #Replace the AdaptiveAvgPool layer with AvgPool
 model.avgpool = torch.nn.AvgPool2d(1,1)
+#switch out ReLu with ReLu6
+replace_relu_mod(model)
 
 # Instantiate the hook
 hook = IntermediateOutputsHook()
