@@ -1,5 +1,5 @@
 import torch
-from torchvision.models import resnet18
+from torchvision.models import resnet18, alexnet
 import torch.nn as nn
 import numpy as np
 from PIL import Image
@@ -34,8 +34,13 @@ def process_outputs(output):
 
 # Initialize ResNet18 with default weights (IMAGENET1K_V1)
 def init_resnet():
-    resnet18_default = resnet18(weights="DEFAULT")
-    return resnet18_default.eval()    
+    model = resnet18(weights="DEFAULT")
+    return model.eval()    
+
+#Initialize AlexNet with default weights (IMAGENET1K_V1)
+def init_alexnet():
+    model = alexnet(weights="DEFAULT")
+    return model
 
 # Run inference and return results
 def infer(input, model):
@@ -56,27 +61,41 @@ def replace_relu(module):
         if type(curr_attribute) == torch.nn.ReLU:
             new_activation = torch.nn.ReLU6(curr_attribute.inplace)
             setattr(module, attributes, new_activation)
-    for name, child in module.named_children():
+    for _, child in module.named_children():
         replace_relu(child)
 
 #Init with default weights
 resnet18_default = init_resnet()
 resnet18_custom = init_resnet()
+alexnet_default = init_alexnet()
+alexnet_custom = init_alexnet()
 
 #Switch out avgpool with custom avg pool
 resnet18_custom.avgpool = torch.nn.AvgPool2d((7,7),512)
+alexnet_custom.avgpool = torch.nn.AvgPool2d(1,1)
+
 #switch out ReLu with ReLu6
 replace_relu(resnet18_custom)
-    
+#replace_relu(alexnet_custom)
+
 #prepareinput
-prepared_input = prepare_input()
+input = prepare_input()
 
 #Run inference
-out_default = infer(prepared_input,resnet18_default)
-out_custom = infer(prepared_input,resnet18_custom)
+out_resnet_default = infer(input,resnet18_default)
+out_resnet_custom = infer(input,resnet18_custom)
+out_alexnet_default = infer(input, alexnet_default)
+out_alexnet_custom = infer(input, alexnet_custom)
 
 #Print
+print("ResNet18")
 print("Default:", end=' ')
-print_tuple_list(out_default)
+print_tuple_list(out_resnet_default)
 print("Custom: ",end=' ')
-print_tuple_list(out_custom)
+print_tuple_list(out_resnet_custom)
+print("---------------------------")
+print("AlexNet")
+print("Default:", end=' ')
+print_tuple_list(out_alexnet_default)
+print("Custom: ",end=' ')
+print_tuple_list(out_alexnet_custom)
