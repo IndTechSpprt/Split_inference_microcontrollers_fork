@@ -4,6 +4,7 @@ import torch.nn as nn
 import numpy as np
 from PIL import Image
 from torchvision import transforms
+from replace_relu import replace_relu_attr, replace_relu_mod
 
 # Convert the input into a mini-batch so the model gets the image in the correct format
 def prepare_input():
@@ -53,24 +54,6 @@ def print_tuple_list(tuple_list):
         print(str(tuple[0]) + ": " + str(tuple[1]), end=' ')
     print("")
 
-#Replace the ReLU layers with ReLU6 - as ReLU6 is already implemented by the framework and is a lighter option than ReLU
-#Based on https://discuss.pytorch.org/t/how-to-modify-a-pretrained-model/60509/10 and https://stackoverflow.com/questions/58297197/how-to-change-activation-layer-in-pytorch-pretrained-module/64161690#64161690
-def replace_relu_attr(module):
-    for attributes in dir(module):
-        curr_attribute = getattr(module, attributes)
-        if type(curr_attribute) == torch.nn.ReLU:
-            new_activation = torch.nn.ReLU6(curr_attribute.inplace)
-            setattr(module, attributes, new_activation)
-    for _, child in module.named_children():
-            replace_relu_attr(child)
-
-def replace_relu_mod(module):
-    for child in module.named_children():
-        if type(child[1]) == torch.nn.ReLU:
-            setattr(module,child[0], torch.nn.ReLU6(True))
-        else:
-            replace_relu_mod(child[1])
-
 #Init with default weights
 resnet18_default = init_resnet()
 resnet18_custom = init_resnet()
@@ -84,8 +67,6 @@ alexnet_custom.avgpool = torch.nn.AvgPool2d(1,1)
 #switch out ReLu with ReLu6
 replace_relu_attr(resnet18_custom)
 replace_relu_mod(alexnet_custom)
-for module in alexnet_custom.modules():
-    print(module)
 
 #prepareinput
 input = prepare_input()
