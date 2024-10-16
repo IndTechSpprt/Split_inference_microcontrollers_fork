@@ -45,13 +45,25 @@ def print_tuple_list(tuple_list):
         print(str(tuple[0]) + ": " + str(tuple[1]), end=' ')
     print("")
 
+#Based on https://discuss.pytorch.org/t/how-to-modify-a-pretrained-model/60509/10 and https://stackoverflow.com/questions/58297197/how-to-change-activation-layer-in-pytorch-pretrained-module/64161690#64161690
+def replace_relu(module):
+    for attributes in dir(module):
+        curr_attribute = getattr(module, attributes)
+        if type(curr_attribute) == torch.nn.ReLU:
+            new_activation = torch.nn.ReLU6(curr_attribute.inplace)
+            setattr(module, attributes, new_activation)
+    for name, child in module.named_children():
+        replace_relu(child)
+
 #Init with default weights
 resnet18_default = init_resnet()
 resnet18_custom = init_resnet()
 
 #Switch out avgpool with custom avg pool
 resnet18_custom.avgpool = torch.nn.AvgPool2d((7,7),512)
-
+#switch out ReLu with ReLu6
+replace_relu(resnet18_custom)
+    
 #prepareinput
 prepared_input = prepare_input()
 
