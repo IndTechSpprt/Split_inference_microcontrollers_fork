@@ -22,6 +22,7 @@ pub fn decode_json(mut file: File) -> HashMap<i32, Box<dyn Layer>> {
             LayerWrapper::Linear(linear) => (key, Box::new(linear) as Box<dyn Layer>),
             LayerWrapper::BatchNorm2d(norm) => (key, Box::new(norm) as Box<dyn Layer>),
             LayerWrapper::ReLU6(relu) => (key, Box::new(relu) as Box<dyn Layer>),
+            LayerWrapper::MaxPool2d(max_pool2d) => (key, Box::new(max_pool2d) as Box<dyn Layer>),
         })
         .collect();
     converted_mapping

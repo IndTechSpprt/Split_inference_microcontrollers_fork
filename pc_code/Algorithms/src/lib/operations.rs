@@ -96,6 +96,7 @@ pub fn distribute_weight(layer: &Box<dyn Layer>, total_cpu_count: u8,portions:Ve
             kernel_data.data = layer.get_weights();
             weight_to_send[0] = vec![kernel_data];
         }
+        InfoWrapper::MaxPool2d(..) => todo!(),
     }
     weight_to_send
 }
@@ -151,7 +152,8 @@ pub fn get_input_mapping(
         }
         InfoWrapper::ReLU6(_info) => {}
         InfoWrapper::BatchNorm2d(_info) => {}
-        InfoWrapper::Linear(_info) => {} // full pass
+        InfoWrapper::Linear(_info) => {}
+        InfoWrapper::MaxPool2d(..) => todo!(), // full pass
     }
     //empty mapping means full pass
     mapping
@@ -468,6 +470,7 @@ pub fn distributed_computation(
             }
         }
         InfoWrapper::BatchNorm2d(_info) => {}
+        InfoWrapper::MaxPool2d(..) => todo!(),
     };
     result.concat()
 }

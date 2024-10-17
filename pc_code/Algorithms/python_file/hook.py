@@ -42,6 +42,7 @@ def trace_weights(hook):
     layer_id = 0
     for layer in zip(hook.inputs, hook.outputs, hook.modules):
         layer_id += 1
+
         if isinstance(layer[2], torch.nn.Conv2d):
             kernel_size = layer[2].kernel_size
             padding = layer[2].padding
@@ -128,6 +129,18 @@ def trace_weights(hook):
         if isinstance(layer[2], torch.nn.ReLU6):
             input_shape = layer[0][0].shape
             mapping[f"{layer_id}"] = {"ReLU6": {"input_shape": input_shape}}
+        
+        #TODO what else do we need to do max pooling
+        if isinstance(layer[2],nn.MaxPool2d):
+            kernel_size = layer[2].kernel_size
+            stride = layer[2].stride
+            dilation = layer[2].dilation
+            (n, c, h, w) = layer[0][0].shape
+            (c1, h1, w1) = layer[1][0].shape
+            mapping[f"{layer_id}"] = {
+                "MaxPool2d": {"s": stride, "k": kernel_size, "d": dilation}
+            }
+
         if layer_id == 22 :
             # output = layer[2](layer[0][0])
             # np.savetxt("../test_references/141.txt", layer[1][0].flatten().detach().numpy(), fmt='%.10f', delimiter=',')

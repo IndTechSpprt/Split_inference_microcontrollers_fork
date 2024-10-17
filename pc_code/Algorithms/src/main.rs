@@ -4,7 +4,7 @@ use algo::{decode, Layer};
 use std::fs::File;
 
 pub fn main() {
-    let file = File::open("pc_code/Algorithms/json_files/141.json").expect("Failed to open file");
+    let file = File::open("pc_code/Algorithms/json_files/alexnet.json").expect("Failed to open file");
     let result = decode::decode_json(file);
     // Iterate over the entries and print each key-value pair
     let mut sorted = result.into_iter().collect::<Vec<(i32, Box<dyn Layer>)>>();

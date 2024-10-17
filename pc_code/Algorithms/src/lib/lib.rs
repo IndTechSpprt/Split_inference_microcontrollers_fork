@@ -1,3 +1,4 @@
+use maxpool2d::MaxPool2d;
 use serde::{Deserialize, Serialize};
 
 use std::fmt::Debug;
@@ -5,6 +6,7 @@ pub mod calculations;
 pub mod decode;
 pub mod operations;
 pub mod util;
+pub mod maxpool2d;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum LayerWrapper {
@@ -12,6 +14,7 @@ pub enum LayerWrapper {
     Linear(Linear),
     BatchNorm2d(Batchnorm2d),
     ReLU6(Relu6),
+    MaxPool2d(MaxPool2d)
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum InfoWrapper {
@@ -19,6 +22,7 @@ pub enum InfoWrapper {
     Linear(LinearMapping),
     BatchNorm2d(Vec<i32>),
     ReLU6(Vec<i32>),
+    MaxPool2d((i32, i32), i32, i32) //TODO better data format
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WeightUnit {
@@ -386,7 +390,7 @@ impl Layer for Batchnorm2d {
     }
 
     fn print_weights_shape(&self) {
-        println!("Input shpae : {:?}", self.input_shape)
+        println!("Input shape : {:?}", self.input_shape)
     }
     //assuming the input starts with channel, ie (c,h,w)
     fn get_weights_from_input(&self, input: Vec<Vec<i32>>, c: i32) -> Vec<f32> {
