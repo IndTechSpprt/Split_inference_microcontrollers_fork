@@ -1,41 +1,14 @@
 import torch
 import torch.nn as nn
 from PIL import Image
-from torchvision.models import alexnet
+from torchvision.models import resnet18
 import torch
 import torch.nn as nn
 import json
 import numpy as np
 from torchvision import transforms
 from replace_relu import replace_relu_mod, replace_relu_attr
-
-class IntermediateOutputsHook:
-    def __init__(self):
-        self.outputs = []
-        self.handles = []
-        self.inputs = []
-        self.modules = []
-
-    def register(self, model):
-        # Register a forward hook for each submodule
-        for submodule in model.children():
-            if len(list(submodule.children())) == 0:
-                handle = submodule.register_forward_hook(self.hook_fn)
-                self.handles.append(handle)
-            else:
-                self.register(submodule)
-
-    def hook_fn(self, module, input, output):
-        # Save the intermediate output
-        self.outputs.append(output)
-        self.inputs.append(input)
-        self.modules.append(module)
-
-    def remove_hooks(self):
-        # Remove all the registered hooks
-        for handle in self.handles:
-            handle.remove()
-
+from intermerdiate_output_hooks import IntermediateOutputsHook
 
 def trace_weights(hook):
     mapping = {}
@@ -141,7 +114,7 @@ def trace_weights(hook):
                 "MaxPool2d": {"s": stride, "k": kernel_size, "d": dilation}
             }
 
-        if layer_id == 22 :
+        if layer_id == 61 :
             # output = layer[2](layer[0][0])
             # np.savetxt("../test_references/141.txt", layer[1][0].flatten().detach().numpy(), fmt='%.10f', delimiter=',')
             break
@@ -149,14 +122,14 @@ def trace_weights(hook):
     return mapping
 
 
-# Load the pretrained AlexNet model
-model = alexnet(weights="DEFAULT")
+# Load the pretrained ResNet model
+model = resnet18(weights="DEFAULT")
 model.eval()
 
 #Replace the AdaptiveAvgPool layer with AvgPool
-model.avgpool = torch.nn.AvgPool2d(1,1)
+model.avgpool = torch.nn.AvgPool2d((7,7),512)
 #switch out ReLu with ReLu6
-replace_relu_mod(model)
+replace_relu_attr(model)
 
 # Instantiate the hook
 hook = IntermediateOutputsHook()
@@ -191,7 +164,7 @@ print("Max scores:", max_scores)
 # Access the intermediate outputs
 intermediate_outputs = hook.outputs
 mapping = trace_weights(hook)
-with open('../json_files/alexnet.json', 'w') as file:
+with open('../json_files/resnet18.json', 'w') as file:
     json.dump(mapping, file)
 print("-----")
 # Remove the hooks after you're done

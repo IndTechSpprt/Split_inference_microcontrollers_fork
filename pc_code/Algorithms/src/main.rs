@@ -4,7 +4,7 @@ use algo::{decode, Layer};
 use std::fs::File;
 
 pub fn main() {
-    let file = File::open("pc_code/Algorithms/json_files/alexnet.json").expect("Failed to open file");
+    let file = File::open("pc_code/Algorithms/json_files/resnet18.json").expect("Failed to open file");
     let result = decode::decode_json(file);
     // Iterate over the entries and print each key-value pair
     let mut sorted = result.into_iter().collect::<Vec<(i32, Box<dyn Layer>)>>();
@@ -23,7 +23,7 @@ pub fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algo::{calculations, operations, util, InfoWrapper};
+    use algo::{calculations, operations, util};
     use std::cmp::max;
     use std::fs::OpenOptions;
 
@@ -36,7 +36,7 @@ mod tests {
     #[test]
     fn test_convolution() {
         //weight data
-        let file = File::open("pc_code/Algorithms/json_files/test_convolution.json").expect("Failed to open file");
+        let file = File::open("./json_files/test_resnet18_convolution.json").expect("Failed to open file");
         let result = decode::decode_json(file);
         let r = result.get(&1).expect("failed");
         let output_shape = r.get_output_shape();
@@ -44,17 +44,16 @@ mod tests {
         let width = 44;
         let height = 44;
         let channels = 3;
-        let mut data: Vec<Vec<Vec<f32>>> = vec![vec![vec![0.; 44]; 44]; 3];
-
-        for c in 0..channels {
+        let mut data: Vec<Vec<Vec<f32>>> = Vec::with_capacity(channels);
+        for _ in 0..channels {
+            let mut channel: Vec<Vec<f32>> = Vec::with_capacity(width);
             for i in 0..height {
-                for j in 0..width {
-                    data[c][i][j] = (c * width * height + i * height + j) as f32;
-                }
+                channel.push(vec![i as f32; width]);
             }
+            data.push(channel);
         }
         //reference output
-        let file = File::open(r"pc_code\Algorithms\test_references\conv_new.txt").expect("f");
+        let file = File::open("./test_references/resnet18_conv_out.txt").expect("f");
         let reader = BufReader::new(file);
         let mut reference: Vec<f32> = Vec::new();
         for line in reader.lines() {
