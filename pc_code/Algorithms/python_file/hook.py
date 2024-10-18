@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from PIL import Image
-from torchvision.models import resnet18
+from torchvision.models import mobilenet_v2
 import torch
 import torch.nn as nn
 import json
@@ -114,7 +114,7 @@ def trace_weights(hook):
                 "MaxPool2d": {"s": stride, "k": kernel_size, "d": dilation}
             }
 
-        if layer_id == 61 :
+        if layer_id == 141 :
             # output = layer[2](layer[0][0])
             # np.savetxt("../test_references/141.txt", layer[1][0].flatten().detach().numpy(), fmt='%.10f', delimiter=',')
             break
@@ -123,7 +123,7 @@ def trace_weights(hook):
 
 
 # Load the pretrained ResNet model
-model = resnet18(weights="DEFAULT")
+model = mobilenet_v2(weights="DEFAULT")
 model.eval()
 
 #Replace the AdaptiveAvgPool layer with AvgPool
