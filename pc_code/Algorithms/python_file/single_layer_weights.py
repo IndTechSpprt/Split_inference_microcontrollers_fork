@@ -15,7 +15,7 @@ def trace_and_save_data(hook):
     for layer in zip(hook.inputs, hook.outputs, hook.modules):
         layer_id += 1
 
-        if isinstance(layer[2], torch.nn.Conv2d):
+        if isinstance(layer[2], nn.Conv2d):
             kernel_size = layer[2].kernel_size
             padding = layer[2].padding
             groups = layer[2].groups
@@ -38,8 +38,24 @@ def trace_and_save_data(hook):
                 "o": (c, h, w),
             }
             mapping[f"{layer_id}"] = {"Convolution": {"w": weights, "info": o_i_mapping, "bias": bias}}
-            np.savetxt("../test_references/resnet18_conv_out.txt", layer[1][0].flatten().detach().numpy(), fmt='%.10f', delimiter=',')
+
+        if isinstance(layer[2], torch.nn.BatchNorm2d):
+            weights = layer[2].weight.detach().tolist()
+            bias = layer[2].bias.detach().tolist()
+            r_m = layer[2].running_mean.detach().tolist()
+            r_v = layer[2].running_var.detach().tolist()
+            input_shape = layer[0][0].shape
+            mapping[f"{layer_id}"] = {
+            "BatchNorm2d": {"w": weights, "bias": bias, "r_m": r_m, "r_v": r_v, "input_shape": input_shape}}
+
+        if isinstance(layer[2], torch.nn.ReLU6):
+            input_shape = layer[0][0].shape
+            mapping[f"{layer_id}"] = {"ReLU6": {"input_shape": input_shape}}
+
+        if layer_id == 3:
+            np.savetxt("../test_references/test_cbr_resnet18.txt", layer[1][0].flatten().detach().numpy(), fmt='%.10f', delimiter=',')
             break
+
     return mapping
 
 # Load the pretrained ResNet model
@@ -67,7 +83,7 @@ output = model(input_data)
 
 # get weights, save
 mapping = trace_and_save_data(hook)
-with open('../json_files/test_resnet18_convolution.json', 'w') as file:
+with open('../json_files/test_resnet18_cbr.json', 'w') as file:
     json.dump(mapping, file)
 print("-----")
 # Remove the hooks after you're done

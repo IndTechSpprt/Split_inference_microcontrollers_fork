@@ -87,13 +87,13 @@ mod tests {
     }
     #[test]
     fn test_linear() {
-        let file = File::open("pc_code/Algorithms/json_files/test_linear.json").expect("Failed to open file");
+        let file = File::open("./json_files/test_resnet18_linear.json").expect("Failed to open file");
         let result = decode::decode_json(file);
-        let r = result.get(&141).expect("failed");
+        let r = result.get(&60).expect("failed");
         let output_shape = r.get_output_shape();
 
         //reference output
-        let file = File::open(".//test_references/linear_output.txt").expect("f");
+        let file = File::open("./test_references/linear_output_resnet_18.txt").expect("f");
         let reader = BufReader::new(file);
         let mut reference: Vec<f32> = Vec::new();
         for line in reader.lines() {
@@ -105,7 +105,7 @@ mod tests {
             }
         }
         //reference input
-        let file = File::open("pc_code/Algorithms/test_references/linear_input.txt").expect("f");
+        let file = File::open("./test_references/linear_input_resnet_18.txt").expect("f");
         let reader = BufReader::new(file);
         let mut input: Vec<Vec<f32>> = Vec::new();
         for line in reader.lines() {
@@ -133,7 +133,7 @@ mod tests {
     #[test]
     fn test_conv_norm_relu() {
         //weight data
-        let file = File::open("pc_code/Algorithms/json_files/test_cbr.json").expect("Failed to open file");
+        let file = File::open("./json_files/test_resnet18_cbr.json").expect("Failed to open file");
         let layers = decode::decode_json(file);
         //input
         let width = 44;
@@ -149,7 +149,7 @@ mod tests {
         }
 
         //reference output
-        let file = File::open("pc_code/Algorithms/test_references/cbr_reference_out.txt").expect("f");
+        let file = File::open("./test_references/test_cbr_resnet18.txt").expect("f");
         let reader = BufReader::new(file);
         let mut reference: Vec<f32> = Vec::new();
         for line in reader.lines() {
