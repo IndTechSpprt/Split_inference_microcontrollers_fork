@@ -34,3 +34,4 @@ pc_code/Algorithms/json_files/test_resnet18_linear.json
 pc_code/Algorithms/test_references/linear_input_resnet_18.txt
 pc_code/Algorithms/test_references/linear_output_resnet_18.txt
 pc_code/Algorithms/test_references/test_cbr_resnet18.txt
+pc_code/Algorithms/images/test/*
