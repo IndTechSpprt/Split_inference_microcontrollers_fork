@@ -127,9 +127,9 @@ model = mobilenet_v2(weights="DEFAULT")
 model.eval()
 
 #Replace the AdaptiveAvgPool layer with AvgPool
-model.avgpool = torch.nn.AvgPool2d((7,7),512)
+#model.avgpool = torch.nn.AvgPool2d((7,7),512)
 #switch out ReLu with ReLu6
-replace_relu_attr(model)
+#replace_relu_attr(model)
 
 # Instantiate the hook
 hook = IntermediateOutputsHook()
