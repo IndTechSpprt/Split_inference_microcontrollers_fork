@@ -377,7 +377,7 @@ mod tests {
         let result = decode::decode_json(file);
         let layer = result.get(&5).expect("failed");
         let _output_shape = layer.get_output_shape();
-        //input
+        //make input tensor from pytorch (initial input: 3x44x44)
         let file = File::open("./test_references/test_resnet18_conv5_in.txt").expect("f");
         let reader = BufReader::new(file);
         let mut reference_in: Vec<f32> = Vec::new();
@@ -397,7 +397,6 @@ mod tests {
         for i in 0..64 {
             for j in 0..11 {
                 for m in 0..11 {
-                    println!("{},{},{}", i,j,m);
                     input[i][j][m] = reference_in[(i * 11 * 11
                         + j * 11
                         + m) as usize]
