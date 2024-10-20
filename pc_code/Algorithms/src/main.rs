@@ -26,6 +26,7 @@ mod tests {
     use algo::{calculations, operations, util};
     use std::cmp::max;
     use std::fs::OpenOptions;
+    use std::vec;
 
     use algo::operations::mark_end;
     use algo::util::pre_processing;
@@ -369,6 +370,127 @@ mod tests {
                 }
             }
         }
+    }
+    #[test]
+    fn test_weight_distribution_single_convolution_resnet18_5() {
+        let file = File::open("./json_files/test_resnet18_conv5.json").expect("Failed to open file");
+        let result = decode::decode_json(file);
+        let layer = result.get(&5).expect("failed");
+        let _output_shape = layer.get_output_shape();
+        //input
+        let file = File::open("./test_references/test_resnet18_conv5_in.txt").expect("f");
+        let reader = BufReader::new(file);
+        let mut reference_in: Vec<f32> = Vec::new();
+        for line in reader.lines() {
+            let line = line.expect("line read failed");
+            if let Ok(value) = line.trim().parse::<f32>() {
+                reference_in.push(value);
+            } else {
+                eprintln!("Error parsing line: {}", line);
+            }
+        }
+        let mut input: Vec<Vec<Vec<f32>>> = vec![
+            vec![vec![0.; 11 as usize]; 11 as usize];
+            64 as usize
+        ];
+
+        for i in 0..64 {
+            for j in 0..11 {
+                for m in 0..11 {
+                    println!("{},{},{}", i,j,m);
+                    input[i][j][m] = reference_in[(i * 11 * 11
+                        + j * 11
+                        + m) as usize]
+                }
+            }
+        }
+
+        let _temp = layer.get_info();
+        let input_shape: Vec<usize> = vec![64, 11, 11];
+        let total_cpu_count = 8; //1-15 because of u16 coding for mapping
+        let weight = operations::distribute_weight(layer, total_cpu_count,vec![1,1,1,1,1,1,1,1]);
+        let mapping = operations::get_input_mapping(layer, total_cpu_count, input_shape,vec![1,1,1,1,1,1,1,1]);
+        let inputs_distribution = operations::distribute_input(input, mapping, total_cpu_count);
+        let output_shape = layer.get_output_shape();
+        let mut output = vec![
+            vec![vec![0.; output_shape[2] as usize]; output_shape[1] as usize];
+            output_shape[0] as usize
+        ];
+        let mut output_buffer = Vec::new();
+        for i in 0..total_cpu_count as usize {
+            let _info = layer.get_info();
+            let mut result = operations::distributed_computation(
+                inputs_distribution[i].clone(),
+                weight[i].clone(),
+            );
+            output_buffer.append(&mut result);
+        }
+        for i in 0..output_shape[0] as usize {
+            for j in 0..output_shape[1] as usize {
+                for k in 0..output_shape[2] as usize {
+                    output[i][j][k] =
+                        output_buffer[i * output_shape[1] as usize * output_shape[2] as usize
+                            + j * output_shape[2] as usize
+                            + k];
+                }
+            }
+        }
+
+        let file = File::open("./test_references/test_resnet18_conv5_out.txt").expect("f");
+        let reader = BufReader::new(file);
+        let mut reference: Vec<f32> = Vec::new();
+        for line in reader.lines() {
+            let line = line.expect("line read failed");
+            if let Ok(value) = line.trim().parse::<f32>() {
+                reference.push(value);
+            } else {
+                eprintln!("Error parsing line: {}", line);
+            }
+        }
+        for i in 0..output_shape[0] {
+            for j in 0..output_shape[1] {
+                for m in 0..output_shape[2] {
+                    if (output[i as usize][j as usize][m as usize]
+                        - reference[(i * output_shape[1] * output_shape[2]
+                            + j * output_shape[2]
+                            + m) as usize])
+                        .abs()
+                        >= 1e-2
+                    {
+                        println!(
+                            "{:?},{:?},{:?}",
+                            output[i as usize][j as usize][m as usize],
+                            reference[(i * output_shape[1] * output_shape[2]
+                                + j * output_shape[2]
+                                + m) as usize],
+                            (i * output_shape[1] * output_shape[2] + j * output_shape[2] + m)
+                        )
+                    }
+                    assert!(
+                        (output[i as usize][j as usize][m as usize]
+                            - reference[(i * output_shape[1] * output_shape[2]
+                                + j * output_shape[2]
+                                + m) as usize])
+                            .abs()
+                            < 1e-2
+                    )
+                }
+            }
+        }
+        println!("!");
+        // let serialized = serde_json::to_string(&mapping).unwrap();
+        // // Write the JSON string to a file
+        // let mut file = OpenOptions::new()
+        //     .create(true)
+        //     .append(true)
+        //     .open("output.json")
+        //     .unwrap();
+        // writeln!(file, "{}", serialized).unwrap();
+        // input_shape = (
+        //     output_shape[0] as usize,
+        //     output_shape[1] as usize,
+        //     output_shape[2] as usize,
+        // );
     }
     #[test]
     fn test_weight_distribution_single_convolution() {
