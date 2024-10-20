@@ -372,7 +372,7 @@ mod tests {
     }
     #[test]
     fn test_weight_distribution_single_convolution() {
-        let file = File::open("pc_code/Algorithms/json_files/test_convolution.json").expect("Failed to open file");
+        let file = File::open("./json_files/test_convolution.json").expect("Failed to open file");
         let result = decode::decode_json(file);
         let layer = result.get(&1).expect("failed");
         let _output_shape = layer.get_output_shape();
@@ -380,15 +380,13 @@ mod tests {
         let width = 44;
         let height = 44;
         let channels = 3;
-
-        let mut input: Vec<Vec<Vec<f32>>> = vec![vec![vec![0.; 44]; 44]; 3];
-
-        for c in 0..channels {
+        let mut input: Vec<Vec<Vec<f32>>> = Vec::with_capacity(channels);
+        for _ in 0..channels {
+            let mut channel: Vec<Vec<f32>> = Vec::with_capacity(width);
             for i in 0..height {
-                for j in 0..width {
-                    input[c][i][j] = (c * width * height + i * height + j) as f32;
-                }
+                channel.push(vec![i as f32; width]);
             }
+            input.push(channel);
         }
 
         let _temp = layer.get_info();
@@ -422,7 +420,7 @@ mod tests {
             }
         }
 
-        let file = File::open("pc_code/Algorithms/test_references/conv_new.txt").expect("f");
+        let file = File::open("./test_references/conv_new.txt").expect("f");
         let reader = BufReader::new(file);
         let mut reference: Vec<f32> = Vec::new();
         for line in reader.lines() {
