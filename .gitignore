@@ -25,3 +25,5 @@ pc_code/Simulation/Simu_q/input_len_1.txt
 pc_code/Simulation/Simu_q/input_len_2.txt
 MCU_code/PlatformIO_code/worker_code/include/lengths.h
 pc_code/Algorithms/python_file/__pycache__/
+pc_code/Algorithms/json_files/alexnet.json
+pc_code/Algorithms/images/test*
