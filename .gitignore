@@ -27,15 +27,4 @@ MCU_code/PlatformIO_code/worker_code/include/lengths.h
 pc_code/Algorithms/python_file/__pycache__/
 pc_code/Algorithms/json_files/alexnet.json
 pc_code/Algorithms/json_files/resnet18.json
-pc_code/Algorithms/json_files/test_resnet18_convolution.json
-pc_code/Algorithms/test_references/resnet18_conv_out.txt
-pc_code/Algorithms/json_files/test_resnet18_cbr.json
-pc_code/Algorithms/json_files/test_resnet18_linear.json
-pc_code/Algorithms/test_references/linear_input_resnet_18.txt
-pc_code/Algorithms/test_references/linear_output_resnet_18.txt
-pc_code/Algorithms/test_references/test_cbr_resnet18.txt
 pc_code/Algorithms/images/test/*
-pc_code/Algorithms/json_files/test_convolution.json
-pc_code/Algorithms/json_files/test_resnet18_conv5.json
-pc_code/Algorithms/test_references/test_resnet18_conv5_in.txt
-pc_code/Algorithms/test_references/test_resnet18_conv5_out.txt
