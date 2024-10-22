@@ -39,19 +39,32 @@ mod tests {
         //weight data
         let file = File::open("./json_files/test_resnet18_convolution.json").expect("Failed to open file");
         let result = decode::decode_json(file);
-        let r = result.get(&1).expect("failed");
+        let r = result.get(&22).expect("failed");
         let output_shape = r.get_output_shape();
-        //input
-        let width = 44;
-        let height = 44;
-        let channels = 3;
-        let mut data: Vec<Vec<Vec<f32>>> = Vec::with_capacity(channels);
-        for _ in 0..channels {
-            let mut channel: Vec<Vec<f32>> = Vec::with_capacity(width);
-            for i in 0..height {
-                channel.push(vec![i as f32; width]);
+        let file = File::open("./test_references/resnet18_conv_in.txt").expect("f");
+        let reader = BufReader::new(file);
+        let mut reference_in: Vec<f32> = Vec::new();
+        for line in reader.lines() {
+            let line = line.expect("line read failed");
+            if let Ok(value) = line.trim().parse::<f32>() {
+                reference_in.push(value);
+            } else {
+                eprintln!("Error parsing line: {}", line);
             }
-            data.push(channel);
+        }
+        let mut input: Vec<Vec<Vec<f32>>> = vec![
+            vec![vec![0.; 11 as usize]; 11 as usize];
+            64 as usize
+        ];
+
+        for i in 0..64 {
+            for j in 0..11 {
+                for m in 0..11 {
+                    input[i][j][m] = reference_in[(i * 11 * 11
+                        + j * 11
+                        + m) as usize]
+                }
+            }
         }
         //reference output
         let file = File::open("./test_references/resnet18_conv_out.txt").expect("f");
@@ -72,7 +85,7 @@ mod tests {
                     let pos = vec![i, j, m];
                     let inputs_p = r.get_input(pos);
                     let weights: Vec<f32> = r.get_weights_from_input(inputs_p.clone(), i);
-                    let inputs = util::sample_input_from_p_zero_padding(inputs_p, &data);
+                    let inputs = util::sample_input_from_p_zero_padding(inputs_p, &input);
                     let result = calculations::vector_mul_b(inputs, weights, 0.);
                     assert!(
                         (result
@@ -370,126 +383,6 @@ mod tests {
                 }
             }
         }
-    }
-    #[test]
-    fn test_weight_distribution_single_convolution_resnet18_5() {
-        let file = File::open("./json_files/test_resnet18_conv5.json").expect("Failed to open file");
-        let result = decode::decode_json(file);
-        let layer = result.get(&5).expect("failed");
-        let _output_shape = layer.get_output_shape();
-        //make input tensor from pytorch (initial input: 3x44x44)
-        let file = File::open("./test_references/test_resnet18_conv5_in.txt").expect("f");
-        let reader = BufReader::new(file);
-        let mut reference_in: Vec<f32> = Vec::new();
-        for line in reader.lines() {
-            let line = line.expect("line read failed");
-            if let Ok(value) = line.trim().parse::<f32>() {
-                reference_in.push(value);
-            } else {
-                eprintln!("Error parsing line: {}", line);
-            }
-        }
-        let mut input: Vec<Vec<Vec<f32>>> = vec![
-            vec![vec![0.; 11 as usize]; 11 as usize];
-            64 as usize
-        ];
-
-        for i in 0..64 {
-            for j in 0..11 {
-                for m in 0..11 {
-                    input[i][j][m] = reference_in[(i * 11 * 11
-                        + j * 11
-                        + m) as usize]
-                }
-            }
-        }
-
-        let _temp = layer.get_info();
-        let input_shape: Vec<usize> = vec![64, 11, 11];
-        let total_cpu_count = 8; //1-15 because of u16 coding for mapping
-        let weight = operations::distribute_weight(layer, total_cpu_count,vec![1,1,1,1,1,1,1,1]);
-        let mapping = operations::get_input_mapping(layer, total_cpu_count, input_shape,vec![1,1,1,1,1,1,1,1]);
-        let inputs_distribution = operations::distribute_input(input, mapping, total_cpu_count);
-        let output_shape = layer.get_output_shape();
-        let mut output = vec![
-            vec![vec![0.; output_shape[2] as usize]; output_shape[1] as usize];
-            output_shape[0] as usize
-        ];
-        let mut output_buffer = Vec::new();
-        for i in 0..total_cpu_count as usize {
-            let _info = layer.get_info();
-            let mut result = operations::distributed_computation(
-                inputs_distribution[i].clone(),
-                weight[i].clone(),
-            );
-            output_buffer.append(&mut result);
-        }
-        for i in 0..output_shape[0] as usize {
-            for j in 0..output_shape[1] as usize {
-                for k in 0..output_shape[2] as usize {
-                    output[i][j][k] =
-                        output_buffer[i * output_shape[1] as usize * output_shape[2] as usize
-                            + j * output_shape[2] as usize
-                            + k];
-                }
-            }
-        }
-
-        let file = File::open("./test_references/test_resnet18_conv5_out.txt").expect("f");
-        let reader = BufReader::new(file);
-        let mut reference: Vec<f32> = Vec::new();
-        for line in reader.lines() {
-            let line = line.expect("line read failed");
-            if let Ok(value) = line.trim().parse::<f32>() {
-                reference.push(value);
-            } else {
-                eprintln!("Error parsing line: {}", line);
-            }
-        }
-        for i in 0..output_shape[0] {
-            for j in 0..output_shape[1] {
-                for m in 0..output_shape[2] {
-                    if (output[i as usize][j as usize][m as usize]
-                        - reference[(i * output_shape[1] * output_shape[2]
-                            + j * output_shape[2]
-                            + m) as usize])
-                        .abs()
-                        >= 1e-2
-                    {
-                        println!(
-                            "{:?},{:?},{:?}",
-                            output[i as usize][j as usize][m as usize],
-                            reference[(i * output_shape[1] * output_shape[2]
-                                + j * output_shape[2]
-                                + m) as usize],
-                            (i * output_shape[1] * output_shape[2] + j * output_shape[2] + m)
-                        )
-                    }
-                    assert!(
-                        (output[i as usize][j as usize][m as usize]
-                            - reference[(i * output_shape[1] * output_shape[2]
-                                + j * output_shape[2]
-                                + m) as usize])
-                            .abs()
-                            < 1e-2
-                    )
-                }
-            }
-        }
-        println!("!");
-        // let serialized = serde_json::to_string(&mapping).unwrap();
-        // // Write the JSON string to a file
-        // let mut file = OpenOptions::new()
-        //     .create(true)
-        //     .append(true)
-        //     .open("output.json")
-        //     .unwrap();
-        // writeln!(file, "{}", serialized).unwrap();
-        // input_shape = (
-        //     output_shape[0] as usize,
-        //     output_shape[1] as usize,
-        //     output_shape[2] as usize,
-        // );
     }
     #[test]
     fn test_weight_distribution_single_convolution() {
@@ -964,4 +857,293 @@ mod tests {
         let processed_image = pre_processing(image_data);
         println!("read finished");
     }
+    #[test]
+    fn test_linear_distributed() {
+        //In Dimensions: [1,1,512] - form input using this
+        //Load references
+        //Distribute
+        //Execute
+        //Check if correct
+        todo!()
+    }
+    #[test]
+    fn test_residual_with_conv() {
+        let residual_connections = vec![
+            vec![4, 9],
+            vec![10, 15],
+            vec![16, 21, 23],
+            vec![24, 29],
+            vec![30, 35, 37],
+            vec![38, 43],
+            vec![44, 49, 51],
+            vec![52, 57],
+        ];
+
+        //weight data
+        let file = File::open("./json_files/test_resnet18_residual_convolution.json").expect("Failed to open file");
+        let layers = decode::decode_json(file);
+
+        //make input tensor from pytorch (initial input: 3x44x44)
+        let file = File::open("./test_references/test_resnet18_conv5_in.txt").expect("f");
+        let reader = BufReader::new(file);
+        let mut reference_in: Vec<f32> = Vec::new();
+        for line in reader.lines() {
+            let line = line.expect("line read failed");
+            if let Ok(value) = line.trim().parse::<f32>() {
+                reference_in.push(value);
+            } else {
+                eprintln!("Error parsing line: {}", line);
+            }
+        }
+        let mut input: Vec<Vec<Vec<f32>>> = vec![
+            vec![vec![0.; 11 as usize]; 11 as usize];
+            64 as usize
+        ];
+
+        for i in 0..64 {
+            for j in 0..11 {
+                for m in 0..11 {
+                    input[i][j][m] = reference_in[(i * 11 * 11
+                        + j * 11
+                        + m) as usize]
+                }
+            }
+        }
+
+        //reference output
+        let file = File::open("./test_references/resnet_18_residue_conv_1_out.txt").expect("f");
+        let reader = BufReader::new(file);
+        let mut reference: Vec<f32> = Vec::new();
+        for line in reader.lines() {
+            let line = line.expect("line read failed");
+            if let Ok(value) = line.trim().parse::<f32>() {
+                reference.push(value);
+            } else {
+                eprintln!("Error parsing line: {}", line);
+            }
+        }
+
+        let mut intermediate_output: Vec<Vec<Vec<Vec<f32>>>> = Vec::new();
+        let mut intermediate_output_extra: Vec<Vec<Vec<Vec<f32>>>> = Vec::new();
+        let mut extra_ctr = 0;
+        //MaxPool output saved
+        intermediate_output.push(input.clone());
+        for i in 5..=58 {
+            let layer = layers.get(&(i as i32)).expect("getting layer failed");
+            let output_shape = layer.get_output_shape();
+            let mut output = vec![
+                vec![vec![0.; output_shape[2] as usize]; output_shape[1] as usize];
+                output_shape[0] as usize
+            ];
+            match layer.identify() {
+                "Convolution" => {
+                    let mut flag = true;
+                    for j in 0..output_shape[0] as usize {
+                        flag = true;
+                        let mut weights: Vec<f32> = Vec::new();
+                        for k in 0..output_shape[1] as usize {
+                            for m in 0..output_shape[2] as usize {
+                                let pos = vec![j as i32, k as i32, m as i32];
+                                let inputs_p = layer.get_input(pos);
+                                //each output channel only need to sample weight once
+                                if flag {
+                                    weights =
+                                        layer.get_weights_from_input(inputs_p.clone(), j as i32);
+                                    flag = false;
+                                }
+                                let inputs =
+                                    util::sample_input_from_p_zero_padding(inputs_p, &input);
+                                let result =
+                                    calculations::vector_mul_b(inputs, weights.clone(), 0.);
+                                output[j][k][m] = result;
+                            }
+                        }
+                    }
+                    //next layer's input = this layer's output
+                    input = output;
+                }
+                "Batchnorm2d" => {
+                    let Ok(_a) = layer.functional_forward(&mut input) else {
+                        panic!("wrong layer")
+                    };
+                }
+                "Relu6" => {
+                    let Ok(_a) = layer.functional_forward(&mut input) else {
+                        panic!("wrong layer")
+                    };
+                }
+                _ => {}
+            }
+            for r in 0..residual_connections.len() {
+                if residual_connections[r][0] == i {
+                    intermediate_output.push(input.clone());
+                }
+                if residual_connections[r][1] == i {
+                    if residual_connections[r].len() == 3 {
+                        intermediate_output_extra.push(input.clone());
+                        extra_ctr+=1;
+                        if i+1 != residual_connections[r][2] {
+                            input = intermediate_output[r].clone();
+                        }
+                    }
+                    else {
+                        for j in 0..output_shape[0] as usize {
+                            for k in 0..output_shape[1] as usize {
+                                for m in 0..output_shape[2] as usize {
+                                    input[j][k][m] += intermediate_output[r][j][k][m];
+                                }
+                            }
+                        }
+                    }
+                }
+                if residual_connections[r].len() == 3 {
+                    if residual_connections[r][2] == i {
+                        for j in 0..output_shape[0] as usize {
+                            for k in 0..output_shape[1] as usize {
+                                for m in 0..output_shape[2] as usize {
+                                    input[j][k][m] += intermediate_output_extra[extra_ctr-1][j][k][m];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for i in 0..input.len() {
+            for j in 0..input[0].len() {
+                for k in 0..input[0][0].len() {
+                    if (input[i][j][k]
+                        - reference
+                            [i * input[0].len() * input[0][0].len() + j * input[0][0].len() + k])
+                        .abs()
+                        >= 1e-2
+                    {
+                        println!(
+                            "left:{:?},right:{:?}",
+                            input[i][j][k],
+                            reference[i * input[0].len() * input[0][0].len()
+                                + j * input[0][0].len()
+                                + k]
+                        );
+                    }
+                    assert!(
+                        (input[i][j][k]
+                            - reference[i * input[0].len() * input[0][0].len()
+                                + j * input[0][0].len()
+                                + k])
+                            .abs()
+                            < 1e-2
+                    )
+                }
+            }
+        }
+
+    }
+    #[test]
+    fn test_weight_distribution_single_convolution_resnet18_5() {
+        let file = File::open("./json_files/test_resnet18_conv5.json").expect("Failed to open file");
+        let result = decode::decode_json(file);
+        let layer = result.get(&5).expect("failed");
+        let _output_shape = layer.get_output_shape();
+        //make input tensor from pytorch (initial input: 3x44x44)
+        let file = File::open("./test_references/test_resnet18_conv5_in.txt").expect("f");
+        let reader = BufReader::new(file);
+        let mut reference_in: Vec<f32> = Vec::new();
+        for line in reader.lines() {
+            let line = line.expect("line read failed");
+            if let Ok(value) = line.trim().parse::<f32>() {
+                reference_in.push(value);
+            } else {
+                eprintln!("Error parsing line: {}", line);
+            }
+        }
+        let mut input: Vec<Vec<Vec<f32>>> = vec![
+            vec![vec![0.; 11 as usize]; 11 as usize];
+            64 as usize
+        ];
+
+        for i in 0..64 {
+            for j in 0..11 {
+                for m in 0..11 {
+                    input[i][j][m] = reference_in[(i * 11 * 11
+                        + j * 11
+                        + m) as usize]
+                }
+            }
+        }
+
+        let _temp = layer.get_info();
+        let input_shape: Vec<usize> = vec![64, 11, 11];
+        let total_cpu_count = 8; //1-15 because of u16 coding for mapping
+        let weight = operations::distribute_weight(layer, total_cpu_count,vec![1,1,1,1,1,1,1,1]);
+        let mapping = operations::get_input_mapping(layer, total_cpu_count, input_shape,vec![1,1,1,1,1,1,1,1]);
+        let inputs_distribution = operations::distribute_input(input, mapping, total_cpu_count);
+        let output_shape = layer.get_output_shape();
+        let mut output = vec![
+            vec![vec![0.; output_shape[2] as usize]; output_shape[1] as usize];
+            output_shape[0] as usize
+        ];
+        let mut output_buffer = Vec::new();
+        for i in 0..total_cpu_count as usize {
+            let _info = layer.get_info();
+            let mut result = operations::distributed_computation(
+                inputs_distribution[i].clone(),
+                weight[i].clone(),
+            );
+            output_buffer.append(&mut result);
+        }
+        for i in 0..output_shape[0] as usize {
+            for j in 0..output_shape[1] as usize {
+                for k in 0..output_shape[2] as usize {
+                    output[i][j][k] =
+                        output_buffer[i * output_shape[1] as usize * output_shape[2] as usize
+                            + j * output_shape[2] as usize
+                            + k];
+                }
+            }
+        }
+
+        let file = File::open("./test_references/test_resnet18_conv5_out.txt").expect("f");
+        let reader = BufReader::new(file);
+        let mut reference: Vec<f32> = Vec::new();
+        for line in reader.lines() {
+            let line = line.expect("line read failed");
+            if let Ok(value) = line.trim().parse::<f32>() {
+                reference.push(value);
+            } else {
+                eprintln!("Error parsing line: {}", line);
+            }
+        }
+        for i in 0..output_shape[0] {
+            for j in 0..output_shape[1] {
+                for m in 0..output_shape[2] {
+                    if (output[i as usize][j as usize][m as usize]
+                        - reference[(i * output_shape[1] * output_shape[2]
+                            + j * output_shape[2]
+                            + m) as usize])
+                        .abs()
+                        >= 1e-2
+                    {
+                        println!(
+                            "{:?},{:?},{:?}",
+                            output[i as usize][j as usize][m as usize],
+                            reference[(i * output_shape[1] * output_shape[2]
+                                + j * output_shape[2]
+                                + m) as usize],
+                            (i * output_shape[1] * output_shape[2] + j * output_shape[2] + m)
+                        )
+                    }
+                    assert!(
+                        (output[i as usize][j as usize][m as usize]
+                            - reference[(i * output_shape[1] * output_shape[2]
+                                + j * output_shape[2]
+                                + m) as usize])
+                            .abs()
+                            < 1e-2
+                    )
+                }
+            }
+        }
+    }
+
 }
