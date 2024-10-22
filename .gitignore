@@ -28,3 +28,4 @@ pc_code/Algorithms/python_file/__pycache__/
 pc_code/Algorithms/json_files/alexnet.json
 pc_code/Algorithms/json_files/resnet18.json
 pc_code/Algorithms/images/test/*
+pc_code/Algorithms/json_files/test_resnet18_residual_convolution.json
