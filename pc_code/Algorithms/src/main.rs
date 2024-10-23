@@ -1012,20 +1012,6 @@ mod tests {
         for i in 0..input.len() {
             for j in 0..input[0].len() {
                 for k in 0..input[0][0].len() {
-                    if (input[i][j][k]
-                        - reference
-                            [i * input[0].len() * input[0][0].len() + j * input[0][0].len() + k])
-                        .abs()
-                        >= 1e-2
-                    {
-                        println!(
-                            "left:{:?},right:{:?}",
-                            input[i][j][k],
-                            reference[i * input[0].len() * input[0][0].len()
-                                + j * input[0][0].len()
-                                + k]
-                        );
-                    }
                     assert!(
                         (input[i][j][k]
                             - reference[i * input[0].len() * input[0][0].len()
