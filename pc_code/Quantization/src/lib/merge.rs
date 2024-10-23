@@ -1,3 +1,4 @@
+use algo::maxpool2d::MaxPool2d;
 use algo::InfoWrapper::Convolution;
 use algo::LayerWrapper::Linear;
 use algo::{Conv, ConvMapping, InfoWrapper, Layer, LayerWrapper, LinearMapping, Relu6};
@@ -117,6 +118,14 @@ pub fn merge_batchnorm(layers: HashMap<i32, Box<dyn Layer>>) {
                 linear.bias[i] = (layer.get_bias(i as i32));
             }
             modified_mapping.insert(prev_nr as i32, LayerWrapper::Linear(linear));
+            prev_nr += 1;
+        }
+        else if layer.identify() == "MaxPool2d" {
+            let InfoWrapper::MaxPool2d((k1, k2), stride, dialation) = layer.get_info_no_padding() else {
+                panic!("impossible to decode Linear info from non Linear layer")
+            };
+            let maxpoollayer = MaxPool2d{k:k1, s: stride, d: dialation};
+            modified_mapping.insert(prev_nr as i32, LayerWrapper::MaxPool2d(maxpoollayer));
             prev_nr += 1;
         }
     }
