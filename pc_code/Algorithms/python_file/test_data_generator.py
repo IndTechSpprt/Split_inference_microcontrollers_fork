@@ -53,8 +53,11 @@ def trace_and_save_data(hook):
             input_shape = layer[0][0].shape
             mapping[f"{layer_id}"] = {"ReLU6": {"input_shape": input_shape}}
 
-        if layer_id == 2:
-            np.savetxt("../test_references/test_resnet18_unmerged_out.txt", layer[1][0].flatten().detach().numpy(), fmt='%.10f', delimiter=',')
+        if layer_id == 4:
+            np.savetxt("../test_references/test_resnet18_conv5_in.txt", layer[1][0].flatten().detach().numpy(), fmt='%.10f', delimiter=',')
+
+        if layer_id == 58:
+            np.savetxt("../test_references/resnet_18_residue_conv_1_out.txt", layer[1][0].flatten().detach().numpy(), fmt='%.10f', delimiter=',')
             break
 
 
@@ -85,7 +88,7 @@ output = model(input_data)
 
 # get weights, save
 mapping = trace_and_save_data(hook)
-with open('../json_files/test_resnet18_merged.json', 'w') as file:
+with open('../json_files/test_resnet18_residual_convolution.json', 'w') as file:
     json.dump(mapping, file)
 print("-----")
 # Remove the hooks after you're done
