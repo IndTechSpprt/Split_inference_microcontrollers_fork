@@ -1131,5 +1131,79 @@ mod tests {
             }
         }
     }
+    #[test]
+    fn test_merge_single_convolution() {
+        //weight data
+        let file = File::open("../Fused/resnet18_merged.json").expect("Failed to open file");
+        let result = decode::decode_json(file);
+        let r = result.get(&1).expect("failed");
+        let output_shape = r.get_output_shape();
+        //input
+        let width = 44;
+        let height = 44;
+        let channels = 3;
+        let mut input: Vec<Vec<Vec<f32>>> = Vec::with_capacity(channels);
+        for _ in 0..channels {
+            let mut channel: Vec<Vec<f32>> = Vec::with_capacity(width);
+            for i in 0..height {
+                channel.push(vec![i as f32; width]);
+            }
+            input.push(channel);
+        }
 
+
+        //reference output - unmerged
+        let file = File::open("./test_references/test_resnet18_unmerged_out.txt").expect("f");
+        let reader = BufReader::new(file);
+        let mut reference_unmerged: Vec<f32> = Vec::new();
+        for line in reader.lines() {
+            let line = line.expect("line read failed");
+            if let Ok(value) = line.trim().parse::<f32>() {
+                reference_unmerged.push(value);
+            } else {
+                eprintln!("Error parsing line: {}", line);
+            }
+        }
+
+        //reference output - merged
+        let file = File::open("./test_references/test_resnet18_merged_out.txt").expect("f");
+        let reader = BufReader::new(file);
+        let mut reference_merged: Vec<f32> = Vec::new();
+        for line in reader.lines() {
+            let line = line.expect("line read failed");
+            if let Ok(value) = line.trim().parse::<f32>() {
+                reference_merged.push(value);
+            } else {
+                eprintln!("Error parsing line: {}", line);
+            }
+        }
+
+        for i in 0..output_shape[0] {
+            for j in 0..output_shape[1] {
+                for m in 0..output_shape[2] {
+                    let pos = vec![i, j, m];
+                    let inputs_p = r.get_input(pos);
+                    let weights: Vec<f32> = r.get_weights_from_input(inputs_p.clone(), i);
+                    let inputs = util::sample_input_from_p_zero_padding(inputs_p, &input);
+                    let result = calculations::vector_mul_b(inputs, weights, r.get_bias(i));
+                    assert!(
+                        (result
+                            - reference_unmerged[(i * output_shape[1] * output_shape[2]
+                                + j * output_shape[2]
+                                + m) as usize])
+                            .abs()
+                            < 1e-2
+                    );
+                    assert!(
+                        (result
+                            - reference_merged[(i * output_shape[1] * output_shape[2]
+                                + j * output_shape[2]
+                                + m) as usize])
+                            .abs()
+                            < 1e-2
+                    )
+                }
+            }
+        }
+    }
 }
