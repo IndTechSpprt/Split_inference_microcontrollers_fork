@@ -41,12 +41,13 @@ processed_values = bytearray(processed_values)
 # PC's IP address and port
 message_size = 1400
 reserved_bytes = 6
-num_mcu = 3
+num_mcu = 4
 pc_ip = "169.254.71.125"  # Replace with PC's IP address
 pc_port = 8080  # Replace with PC's port number
 ip1 = "169.254.71.124"
 ip2 = "169.254.71.123"
 ip3 = "169.254.71.122"
+ip4 = "169.254.71.121"
 # Create a TCP/IP socket
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -70,6 +71,8 @@ for count in range(num_mcu):
         which = 1
     if str(client_address[0]) == ip3:
         which = 2
+    if str(client_address[0]) == ip4:
+        which = 3
     sockets[which] = client_socket
     addresses[which] = client_address
     print(f"Connected to Arduino {which} at:", client_address)
