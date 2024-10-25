@@ -6,6 +6,7 @@ from PIL import Image
 from torchvision import transforms
 import struct
 import torch.nn.functional as F
+import json
 
 # input_image = Image.open("./img.png")
 # input_image = input_image.convert("RGB")
@@ -38,16 +39,17 @@ with open('input.txt', 'r') as file:
 print("!")
 processed_values = bytearray(processed_values)
 
+#Testbed
+with open("testbed.json", 'r') as file:
+    testbed = json.load(file)
+
 # PC's IP address and port
 message_size = 1400
 reserved_bytes = 6
-num_mcu = 4
+num_mcu = len(testbed)
 pc_ip = "169.254.71.125"  # Replace with PC's IP address
 pc_port = 8080  # Replace with PC's port number
-ip1 = "169.254.71.124"
-ip2 = "169.254.71.123"
-ip3 = "169.254.71.122"
-ip4 = "169.254.71.121"
+ip_first_part = "169.254.71."
 # Create a TCP/IP socket
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -65,14 +67,9 @@ for count in range(num_mcu):
     client_socket, client_address = server_socket.accept()
     client_socket.setblocking(0)  # Set socket to non-blocking mode
     print(str(client_address[0]))
-    if str(client_address[0]) == ip1:
-        which = 0
-    if str(client_address[0]) == ip2:
-        which = 1
-    if str(client_address[0]) == ip3:
-        which = 2
-    if str(client_address[0]) == ip4:
-        which = 3
+    for mcu in testbed:
+        if str(client_address[0]) == ip_first_part+mcu["ip_end"]:
+            which = mcu["mcu_id"]
     sockets[which] = client_socket
     addresses[which] = client_address
     print(f"Connected to Arduino {which} at:", client_address)
