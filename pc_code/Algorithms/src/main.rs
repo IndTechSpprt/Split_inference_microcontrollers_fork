@@ -4,7 +4,7 @@ use algo::{decode, Layer};
 use std::fs::File;
 
 pub fn main() {
-    let file = File::open("pc_code/Algorithms/json_files/resnet18.json").expect("Failed to open file");
+    let file = File::open("pc_code/Fused/fused_layers_resnet18.json").expect("Failed to open file");
     let result = decode::decode_json(file);
     // Iterate over the entries and print each key-value pair
     let mut sorted = result.into_iter().collect::<Vec<(i32, Box<dyn Layer>)>>();
@@ -1199,6 +1199,159 @@ mod tests {
                             - reference_merged[(i * output_shape[1] * output_shape[2]
                                 + j * output_shape[2]
                                 + m) as usize])
+                            .abs()
+                            < 1e-2
+                    )
+                }
+            }
+        }
+    }
+    #[test]
+    fn test_merged_residual() {
+        let residual_connections = vec![
+            vec![ 3,  6],    // earlier vec![4, 9],
+            vec![ 7, 10],    // earlier vec![10, 15],
+            vec![11, 14, 15],// earlier vec![16, 21, 23],
+            vec![16, 19],    // earlier vec![24, 29],
+            vec![20, 23, 24],// earlier vec![30, 35, 37],
+            vec![25, 28],    // earlier vec![38, 43],
+            vec![29, 32, 33],// earlier vec![44, 49, 51],
+            vec![34, 37]     // earlier vec![52, 57],
+        ];
+        //weight data
+        let file = File::open("../Fused/fused_layers_resnet18.json").expect("Failed to open file");
+        let layers = decode::decode_json(file);
+
+        //make input tensor from pytorch (initial input: 3x44x44)
+        let file = File::open("./test_references/test_resnet18_conv5_in.txt").expect("f");
+        let reader = BufReader::new(file);
+        let mut reference_in: Vec<f32> = Vec::new();
+        for line in reader.lines() {
+            let line = line.expect("line read failed");
+            if let Ok(value) = line.trim().parse::<f32>() {
+                reference_in.push(value);
+            } else {
+                eprintln!("Error parsing line: {}", line);
+            }
+        }
+        let mut input: Vec<Vec<Vec<f32>>> = vec![
+            vec![vec![0.; 11 as usize]; 11 as usize];
+            64 as usize
+        ];
+
+        for i in 0..64 {
+            for j in 0..11 {
+                for m in 0..11 {
+                    input[i][j][m] = reference_in[(i * 11 * 11
+                        + j * 11
+                        + m) as usize]
+                }
+            }
+        }
+
+        //reference output - merged
+        let file = File::open("./test_references/test_resnet18_residual_out.txt").expect("f");
+        let reader = BufReader::new(file);
+        let mut reference: Vec<f32> = Vec::new();
+        for line in reader.lines() {
+            let line = line.expect("line read failed");
+            if let Ok(value) = line.trim().parse::<f32>() {
+                reference.push(value);
+            } else {
+                eprintln!("Error parsing line: {}", line);
+            }
+        }
+
+        let mut intermediate_output: Vec<Vec<Vec<Vec<f32>>>> = Vec::new();
+        let mut intermediate_output_extra: Vec<Vec<Vec<Vec<f32>>>> = Vec::new();
+        intermediate_output.push(input.clone());
+        let mut extra_ctr = 0;
+
+        for i in 4..=38 {
+            let layer = layers.get(&(i as i32)).expect("getting layer failed");
+            let output_shape = layer.get_output_shape();
+            let mut output = vec![
+                vec![vec![0.; output_shape[2] as usize]; output_shape[1] as usize];
+                output_shape[0] as usize
+            ];
+            match layer.identify() {
+                "Convolution" => {
+                    let mut flag = true;
+                    for j in 0..output_shape[0] as usize {
+                        flag = true;
+                        let mut weights: Vec<f32> = Vec::new();
+                        for k in 0..output_shape[1] as usize {
+                            for m in 0..output_shape[2] as usize {
+                                let pos = vec![j as i32, k as i32, m as i32];
+                                let inputs_p = layer.get_input(pos);
+                                //each output channel only need to sample weight once
+                                if flag {
+                                    weights =
+                                        layer.get_weights_from_input(inputs_p.clone(), j as i32);
+                                    flag = false;
+                                }
+                                let inputs =
+                                    util::sample_input_from_p_zero_padding(inputs_p, &input);
+                                let result = calculations::vector_mul_b(
+                                    inputs,
+                                    weights.clone(),
+                                    layer.get_bias(j as i32),
+                                );
+                                output[j][k][m] = result;
+                            }
+                        }
+                    }
+                    //next layer's input = this layer's output
+                    input = output;
+                }
+                "Relu6" => {
+                    let Ok(_a) = layer.functional_forward(&mut input) else {
+                        panic!("wrong layer")
+                    };
+                }
+                _ => {}
+            }
+            for r in 0..residual_connections.len() {
+                if residual_connections[r][0] == i {
+                    intermediate_output.push(input.clone());
+                }
+                if residual_connections[r][1] == i {
+                    if residual_connections[r].len() == 3 {
+                        intermediate_output_extra.push(input.clone());
+                        extra_ctr+=1;
+                        input = intermediate_output[r].clone();
+                    }
+                    else {
+                        for j in 0..output_shape[0] as usize {
+                            for k in 0..output_shape[1] as usize {
+                                for m in 0..output_shape[2] as usize {
+                                    input[j][k][m] += intermediate_output[r][j][k][m];
+                                }
+                            }
+                        }
+                    }
+                }
+                if residual_connections[r].len() == 3 {
+                    if residual_connections[r][2] == i {
+                        for j in 0..output_shape[0] as usize {
+                            for k in 0..output_shape[1] as usize {
+                                for m in 0..output_shape[2] as usize {
+                                    input[j][k][m] += intermediate_output_extra[extra_ctr-1][j][k][m];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for i in 0..input.len() {
+            for j in 0..input[0].len() {
+                for k in 0..input[0][0].len() {
+                    assert!(
+                        (input[i][j][k]
+                            - reference[i * input[0].len() * input[0][0].len()
+                                + j * input[0][0].len()
+                                + k])
                             .abs()
                             < 1e-2
                     )
