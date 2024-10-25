@@ -29,3 +29,5 @@ pc_code/Algorithms/json_files/alexnet.json
 pc_code/Algorithms/json_files/resnet18.json
 pc_code/Algorithms/images/test/*
 pc_code/Algorithms/json_files/test_resnet18_residual_convolution.json
+pc_code/Algorithms/json_files/test_resnet18_residual_merged.json
+pc_code/Fused/fused_layers_resnet18.json
