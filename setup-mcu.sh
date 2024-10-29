@@ -9,8 +9,17 @@ read -p "Please specify the role of the device to be configured: " mcu_role
 
 read -p "Please specify the id of the device to be configured: " mcu_id
 
+if test -s MCU_code/testbed.json; then 
+echo "Current testbed:"
+cat MCU_code/testbed.json
+echo ""
+fi
+
+read -p "Would you like to append $mcu_role $mcu_id to the testbed? (Yy/Nn)" append_to_testbed
+
 export mcu_role
 export mcu_id
+export append_to_testbed
 
 read -p "Is the device connected to the PC? (Y/N)" ynconn
 case $ynconn in 
