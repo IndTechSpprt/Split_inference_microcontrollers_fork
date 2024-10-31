@@ -16,6 +16,7 @@
 
 /// @brief All supported message headers
 enum MessageHeaders{
+  Inference_Results     = (byte)195,
   Adaptive_Pooling      = (byte)196,
   ACK                   = (byte)197,
   Complete              = (byte)198,

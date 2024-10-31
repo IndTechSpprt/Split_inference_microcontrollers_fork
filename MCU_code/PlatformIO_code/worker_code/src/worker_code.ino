@@ -217,10 +217,14 @@ void setup() {
           }
           count += LINEAR_SEGMENT;
         }
+        char to_send[MESSAGE_SIZE];
+        to_send[0] = MCU_ID;
+        to_send[1] = Inference_Results;
         for(int k = 0; k < result_length[j]; k++){
           Serial.print(k);
           Serial.print(" ");
           Serial.println(result[k]);
+          to_send[k+RESERVED_BYTES] = result[k];
         }
       }
     }

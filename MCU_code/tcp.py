@@ -62,6 +62,7 @@ print("Waiting for connection...")
 sockets = [None] * num_mcu
 addresses = [None] * num_mcu
 which = -1
+results_dict = dict()
 for count in range(num_mcu):
     # Accept a connection
     client_socket, client_address = server_socket.accept()
@@ -70,6 +71,7 @@ for count in range(num_mcu):
     for mcu in testbed:
         if str(client_address[0]) == ip_first_part+mcu["ip_end"]:
             which = int(mcu["mcu_id"])
+        results_dict[mcu["mcu_id"],[]]
     sockets[which] = client_socket
     addresses[which] = client_address
     print(f"Connected to Arduino {which} at:", client_address)
@@ -208,6 +210,11 @@ try:
                         for i in range(6, 6 + len_int):
                             to_adaptive_pooling.append(received_data[i])
                         print(len(to_adaptive_pooling))
+                    
+                    elif received_data[1] == 195:
+                        len_int = struct.unpack('<I', received_data[2:6])[0]
+                        print(f"received results data from MCU{received_data[0]}, len {len_int}")
+                        results_dict[received_data[0]] = received_data[6:6+len_int]
 
                     else:
                         data_to_send = received_data
@@ -224,4 +231,9 @@ try:
                         for w in to_which:
                             wait_for_ack(sockets[w], message_size)
 except KeyboardInterrupt:
+    results = []
+    for count in range(num_mcu):
+        results.append(results_dict[str(count)])
+
+    print(len(results))
     print("Closing connection")
