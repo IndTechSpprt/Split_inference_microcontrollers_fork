@@ -18,6 +18,6 @@ fn main() {
     let layers = decode::decode_json(file);
     let num_workers = 4;
     let protions = vec![1;num_workers as usize];
-    distribute_mapping_weight_quant(layers,num_workers,(3,224,224),"pc_code/Simulation/Simu_q".to_string(),protions);
+    distribute_mapping_weight_quant(layers,num_workers,(3,112,112),"pc_code/Simulation/Simu_q".to_string(),protions);
     c_1_simulation_quant(num_workers, 70);
 }

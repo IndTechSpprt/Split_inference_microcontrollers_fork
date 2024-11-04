@@ -284,6 +284,7 @@ pub fn c_1_simulation_quant(num_workers: u8, end: usize) {
                     } else {
                         println!("Vector is empty.");
                     } // test_equal(result_vec);
+                    println!("Index of 292: {}", result_vec[292]);
                     break;
                 }
             }

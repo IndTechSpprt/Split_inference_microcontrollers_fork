@@ -3,10 +3,10 @@
 #include "communication.h"
 #include "menu.h"
 
-#ifdef PROFILING
 extern unsigned long _heap_start;
 extern unsigned long _heap_end;
 extern char* __brkval;
+#ifdef PROFILING
 
 #define SAMPLE_PERIOD_MICRO_S 100000
 #define MAX_RAM_USAGE_SAMPLES 2000
@@ -28,7 +28,8 @@ bool first_run = true; //bool to keep track of whether this is the first run or 
 
 WriteTypes type = Stop; //Current write type
 
-byte* input_distribution;
+// byte* input_distribution;
+std::vector<byte> input_distribution;
 byte* overflow = nullptr;  // Initialize overflow pointer
 bool overflow_flag = false;
 int rec_count = 0;
@@ -46,6 +47,7 @@ void setup() {
     // Initialize coor_lines and lines
     read_line_by_line(COOR_LINES_FILENAME, coor_lines);
     read_line_by_line(LINES_FILENAME, lines);
+    input_distribution.reserve(451584);
   }
   #ifdef PROFILING
   int inference_start = millis();
@@ -54,16 +56,16 @@ void setup() {
     Serial.print("Current layer: ");
     Serial.println(j);
     if(j < 52){
-        if(j == 0) input_distribution = new byte[input_length[0]];
+        if(j == 0) input_distribution.resize(input_length[0]);
         {
             Serial.print("rec_count is: ");
             Serial.println(rec_count);
             Serial.println("not enough inputs, receiving...");
-            if(input_distribution == nullptr){
-              while(1){
-                Serial.println("input is nullptr!");
-              }
-            }
+            // if(input_distribution == nullptr){
+            //   while(1){
+            //     Serial.println("input is nullptr!");
+            //   }
+            // }
             while(rec_count != input_length[j]){
                 check_and_receive(rec_count,input_distribution);
             }
@@ -98,7 +100,9 @@ void setup() {
           otf(overflow, total_output_count - STACK_SIZE);
           delete[] overflow;
         }
-        input_distribution = new byte[input_length[j + 1]];
+        Serial.print("Available Heap: ");
+        Serial.println(((char*)&_heap_end - __brkval));
+        input_distribution.resize(input_length[j + 1]);
         Serial.println("waiting for permission...");
         wait_for_permission(rec_count,input_distribution);
         Serial.println("premission granted, sending results...");

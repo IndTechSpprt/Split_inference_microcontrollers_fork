@@ -12,21 +12,21 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug",
-            "executable": "/home/shashwathsuresh/TUDelft/ResearchInternship/Split_inference_microcontrollers_fork/MCU_code/PlatformIO_code/worker_code/.pio/build/teensy41/firmware.elf",
-            "projectEnvName": "teensy41",
+            "executable": "/home/shashwathsuresh/TUDelft/ResearchInternship/Split_inference_microcontrollers_fork/MCU_code/PlatformIO_code/worker_code/.pio/build/teensy41_dev/firmware.elf",
+            "projectEnvName": "teensy41_dev",
             "toolchainBinDir": "/home/shashwathsuresh/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin",
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": {
                 "type": "PlatformIO",
-                "task": "Pre-Debug"
+                "task": "Pre-Debug (teensy41_dev)"
             }
         },
         {
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (skip Pre-Debug)",
-            "executable": "/home/shashwathsuresh/TUDelft/ResearchInternship/Split_inference_microcontrollers_fork/MCU_code/PlatformIO_code/worker_code/.pio/build/teensy41/firmware.elf",
-            "projectEnvName": "teensy41",
+            "executable": "/home/shashwathsuresh/TUDelft/ResearchInternship/Split_inference_microcontrollers_fork/MCU_code/PlatformIO_code/worker_code/.pio/build/teensy41_dev/firmware.elf",
+            "projectEnvName": "teensy41_dev",
             "toolchainBinDir": "/home/shashwathsuresh/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -34,8 +34,8 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (without uploading)",
-            "executable": "/home/shashwathsuresh/TUDelft/ResearchInternship/Split_inference_microcontrollers_fork/MCU_code/PlatformIO_code/worker_code/.pio/build/teensy41/firmware.elf",
-            "projectEnvName": "teensy41",
+            "executable": "/home/shashwathsuresh/TUDelft/ResearchInternship/Split_inference_microcontrollers_fork/MCU_code/PlatformIO_code/worker_code/.pio/build/teensy41_dev/firmware.elf",
+            "projectEnvName": "teensy41_dev",
             "toolchainBinDir": "/home/shashwathsuresh/.platformio/packages/toolchain-gccarmnoneeabi-teensy/bin",
             "internalConsoleOptions": "openOnSessionStart",
             "loadMode": "manual"

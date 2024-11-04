@@ -69,7 +69,7 @@ for count in range(num_mcu):
     print(str(client_address[0]))
     for mcu in testbed:
         if str(client_address[0]) == ip_first_part+mcu["ip_end"]:
-            which = int(mcu["mcu_id"])
+            which = int(mcu["id"])
     sockets[which] = client_socket
     addresses[which] = client_address
     print(f"Connected to Arduino {which} at:", client_address)
