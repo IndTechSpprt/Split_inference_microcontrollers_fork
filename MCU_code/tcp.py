@@ -70,8 +70,7 @@ for count in range(num_mcu):
     print(str(client_address[0]))
     for mcu in testbed:
         if str(client_address[0]) == ip_first_part+mcu["ip_end"]:
-            which = int(mcu["mcu_id"])
-        results_dict[mcu["mcu_id"],[]]
+            which = int(mcu["id"])
     sockets[which] = client_socket
     addresses[which] = client_address
     print(f"Connected to Arduino {which} at:", client_address)
@@ -214,7 +213,7 @@ try:
                     elif received_data[1] == 195:
                         len_int = struct.unpack('<I', received_data[2:6])[0]
                         print(f"received results data from MCU{received_data[0]}, len {len_int}")
-                        results_dict[received_data[0]] = received_data[6:6+len_int]
+                        results_dict[str(received_data[0])] = struct.unpack('<' + 'B'*len(received_data[6:6+len_int]), received_data[6:6+len_int])
 
                     else:
                         data_to_send = received_data
@@ -231,9 +230,11 @@ try:
                         for w in to_which:
                             wait_for_ack(sockets[w], message_size)
 except KeyboardInterrupt:
-    results = []
-    for count in range(num_mcu):
-        results.append(results_dict[str(count)])
-
-    print(len(results))
+    index = 0
+    with open("inference_results_mcu.txt", 'w') as file:
+        for count in range(num_mcu):
+            for result in results_dict[str(count)]:
+                file.write(str(index)+": "+str(result)+"\n")
+                index+=1
+    
     print("Closing connection")

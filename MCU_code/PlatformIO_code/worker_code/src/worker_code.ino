@@ -217,15 +217,19 @@ void setup() {
           }
           count += LINEAR_SEGMENT;
         }
-        char to_send[MESSAGE_SIZE];
-        to_send[0] = MCU_ID;
-        to_send[1] = Inference_Results;
+        char results[MESSAGE_SIZE];
+        int res_count = 0;
         for(int k = 0; k < result_length[j]; k++){
           Serial.print(k);
           Serial.print(" ");
           Serial.println(result[k]);
-          to_send[k+RESERVED_BYTES] = result[k];
+          results[RESERVED_BYTES + res_count] = result[k];
+          res_count+=1;
         }
+        results[0] = MCU_ID;
+        results[1] = Inference_Results;
+        write_length(results, res_count);
+        client.write(results, MESSAGE_SIZE);
       }
     }
   #ifdef PROFILING
