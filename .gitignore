@@ -34,3 +34,6 @@ pc_code/Algorithms/json_files/resnet18.json
 pc_code/Algorithms/json_files/test_resnet18_residual_convolution.json
 pc_code/Algorithms/json_files/test_resnet18_residual_merged.json
 pc_code/Fused/fused_layers_resnet18.json
+pc_code/Simulation/Simu_q/worker_4.json
+pc_code/Simulation/Simu_q/input_len_4.txt
+pc_code/Simulation/Simu_q/res_len_4.txt
