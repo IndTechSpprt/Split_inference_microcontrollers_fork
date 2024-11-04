@@ -62,6 +62,7 @@ print("Waiting for connection...")
 sockets = [None] * num_mcu
 addresses = [None] * num_mcu
 which = -1
+results_dict = dict()
 for count in range(num_mcu):
     # Accept a connection
     client_socket, client_address = server_socket.accept()
@@ -208,6 +209,11 @@ try:
                         for i in range(6, 6 + len_int):
                             to_adaptive_pooling.append(received_data[i])
                         print(len(to_adaptive_pooling))
+                    
+                    elif received_data[1] == 195:
+                        len_int = struct.unpack('<I', received_data[2:6])[0]
+                        print(f"received results data from MCU{received_data[0]}, len {len_int}")
+                        results_dict[str(received_data[0])] = struct.unpack('<' + 'B'*len(received_data[6:6+len_int]), received_data[6:6+len_int])
 
                     else:
                         data_to_send = received_data
@@ -224,4 +230,11 @@ try:
                         for w in to_which:
                             wait_for_ack(sockets[w], message_size)
 except KeyboardInterrupt:
+    index = 0
+    with open("inference_results_mcu.txt", 'w') as file:
+        for count in range(num_mcu):
+            for result in results_dict[str(count)]:
+                file.write(str(index)+": "+str(result)+"\n")
+                index+=1
+    
     print("Closing connection")
