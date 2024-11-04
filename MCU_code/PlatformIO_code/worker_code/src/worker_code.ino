@@ -47,7 +47,7 @@ void setup() {
     // Initialize coor_lines and lines
     read_line_by_line(COOR_LINES_FILENAME, coor_lines);
     read_line_by_line(LINES_FILENAME, lines);
-    input_distribution.reserve(451584);
+    input_distribution.reserve(150000);
   }
   #ifdef PROFILING
   int inference_start = millis();
@@ -94,7 +94,7 @@ void setup() {
           }
           distributed_computation(first_line, input_distribution, result, overflow, input_length[j]);
           handle_residual(result,result_length[j],j,residual_connection,zps,scales);
-          if(input_distribution != nullptr) delete[] input_distribution;
+          input_distribution.clear();
         }
         if (overflow_flag) {
           otf(overflow, total_output_count - STACK_SIZE);
