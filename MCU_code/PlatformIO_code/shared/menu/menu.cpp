@@ -109,6 +109,10 @@ void display_menu() {
   Serial.println("\tc - Start Logging Coordinator data (Restarting logger will append records to existing log)");
   Serial.println("\td - Dump Log");
   Serial.println("\th - Menu");
+  #ifdef PROFILING
+  Serial.println("\tr - RAM Statistics from previous run");
+  Serial.println("\tt - Timing Statistics from previous run");
+  #endif
   Serial.println();
 }
 
@@ -149,6 +153,40 @@ void menu_handler(void) {
       case '\r':
       case '\n':
       case 'h': display_menu(); break;
+      #ifdef PROFILING
+      case 'r': {
+        Serial.println("RAM Usage:");
+        for (uint i = 0; i < MAX_RAM_USAGE_SAMPLES; i++) {
+          Serial.print(ram_usage[i]);
+          Serial.print(", ");
+        }
+        Serial.println("");
+        Serial.println("RAM Usage by layer:");
+        for (uint i = 0; i < 53; i++) {
+          Serial.print(ram_usage_by_layer[i]);
+          Serial.print(", ");
+        }
+        Serial.println("");
+      } break;
+      case 't': {
+        Serial.print("Inference Time (ms): ");
+        Serial.println(inference_time);
+        Serial.print("Of which, wait time (ms):");
+        Serial.println(wait_total);
+        Serial.println("Layer Wise Inference Time (ms)");
+        for (uint i = 0; i < 53; i++) {
+          Serial.print(inference_time_layer_wise[i]);
+          Serial.print(", ");
+        }
+        Serial.println("");
+        Serial.println("Layer Wise Wait Time (ms)");
+        for (uint i = 0; i < 53; i++) {
+          Serial.print(wait_layer_wise[i]);
+          Serial.print(", ");
+        }
+        Serial.println("");
+      } break;
+      #endif
     }
     while (Serial.read() != -1);  // remove rest of characters.
 }
