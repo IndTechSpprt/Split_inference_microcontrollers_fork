@@ -9,10 +9,10 @@ extern unsigned long _heap_end;
 extern char* __brkval;
 
 #define SAMPLE_PERIOD_MICRO_S 100000
-#define MAX_RAM_USAGE_SAMPLES 2000
 
-volatile uint ram_usage[MAX_RAM_USAGE_SAMPLES];
-volatile uint samples = 0;
+volatile unsigned ram_usage[MAX_RAM_USAGE_SAMPLES];
+unsigned int ram_usage_by_layer[53] = {0};
+volatile unsigned samples = 0;
 
 /// @brief  Determine how much RAM is being used at the current instant (Currently only for HEAP)
 void saveRAMUsage() {
@@ -22,8 +22,13 @@ void saveRAMUsage() {
   }
 }
 
+uint inference_time_layer_wise[53] = {0};
+uint wait_layer_wise[53] = {0};
+uint inference_time = 0;
+
+uint wait_total = 0;
+
 IntervalTimer ramUsageTimer; //Interval timer to keep track of RAM usage
-bool first_run = true; //bool to keep track of whether this is the first run or not
 #endif
 
 WriteTypes type = Stop; //Current write type
@@ -34,9 +39,6 @@ bool overflow_flag = false;
 int rec_count = 0;
 int ino_count = 0;
 void setup() {
-  #ifdef PROFILING
-  ramUsageTimer.begin(saveRAMUsage,SAMPLE_PERIOD_MICRO_S);//Save RAM usage at 1 ms intervals
-  #endif
   setup_filesys();
   {
     setup_communication(); 
@@ -48,9 +50,15 @@ void setup() {
     read_line_by_line(LINES_FILENAME, lines);
   }
   #ifdef PROFILING
-  int inference_start = millis();
+  uint inference_start = millis();
+  ramUsageTimer.begin(saveRAMUsage,SAMPLE_PERIOD_MICRO_S);//Save RAM usage at 1 ms intervals
   #endif
   for (int j = 0; j < 53; j++) {
+    #ifdef PROFILING
+    uint layer_start = millis();
+    uint wait_layer = 0;
+    uint wait_phase_begin = 0;
+    #endif
     Serial.print("Current layer: ");
     Serial.println(j);
     if(j < 52){
@@ -64,9 +72,15 @@ void setup() {
                 Serial.println("input is nullptr!");
               }
             }
+            #ifdef PROFILING
+            wait_phase_begin = millis();
+            #endif
             while(rec_count != input_length[j]){
                 check_and_receive(rec_count,input_distribution);
             }
+            #ifdef PROFILING
+            wait_layer += millis() - wait_phase_begin;
+            #endif
             Serial.println("finished...");
             rec_count = 0;
         }
@@ -92,6 +106,9 @@ void setup() {
           }
           distributed_computation(first_line, input_distribution, result, overflow, input_length[j]);
           handle_residual(result,result_length[j],j,residual_connection,zps,scales);
+          #ifdef PROFILING
+          ram_usage_by_layer[j] = 524288 - ((char*)&_heap_end - __brkval);
+          #endif
           if(input_distribution != nullptr) delete[] input_distribution;
         }
         if (overflow_flag) {
@@ -100,7 +117,13 @@ void setup() {
         }
         input_distribution = new byte[input_length[j + 1]];
         Serial.println("waiting for permission...");
+        #ifdef PROFILING
+        wait_phase_begin = millis();
+        #endif
         wait_for_permission(rec_count,input_distribution);
+        #ifdef PROFILING
+        wait_layer += millis() - wait_phase_begin;
+        #endif
         Serial.println("premission granted, sending results...");
         if (j < 51) {
           char to_send[MESSAGE_SIZE];
@@ -155,7 +178,13 @@ void setup() {
               }
               //check regularly to avoid clogging
               if(rec_count < input_length[j + 1]) {
+                  #ifdef PROFILING
+                  wait_phase_begin = millis();
+                  #endif
                   check_and_receive( rec_count, input_distribution);
+                  #ifdef PROFILING
+                  wait_layer += millis() - wait_phase_begin;
+                  #endif
               }
             }
             //send the rest of the data
@@ -168,6 +197,12 @@ void setup() {
           if (overflow_flag) dataFile.close();
           to_send[1] = Complete; //signal the end
           send_message_to_coordinator(to_send);
+          #ifdef PROFILING
+          unsigned int temp_usage = 524288 - ((char*)&_heap_end - __brkval);
+          if (temp_usage > ram_usage_by_layer[j]) {
+            ram_usage_by_layer[j] = temp_usage;
+          }
+          #endif
         }
         else if(j == 51){
           char to_send[MESSAGE_SIZE];
@@ -190,6 +225,9 @@ void setup() {
           }
           to_send[1] = Complete;
           send_message_to_coordinator(to_send);
+          #ifdef PROFILING
+          ram_usage_by_layer[j] = 524288 - ((char*)&_heap_end - __brkval);
+          #endif
         }
         ///////////////////////////
       }
@@ -202,7 +240,13 @@ void setup() {
           Serial.println(rec_count);
           Serial.println("not enough inputs, receiving...");
           while(rec_count != input_length[j]){
+              #ifdef PROFILING
+              wait_phase_begin = millis();
+              #endif
               check_and_receive(rec_count,input_distribution);
+              #ifdef PROFILING
+              wait_layer += millis() - wait_phase_begin;
+              #endif
           }
           Serial.println("finished...");
           rec_count = 0;
@@ -230,25 +274,22 @@ void setup() {
         results[1] = Inference_Results;
         write_length(results, res_count);
         client.write(results, MESSAGE_SIZE);
+        #ifdef PROFILING
+        ram_usage_by_layer[j] = 524288 - ((char*)&_heap_end - __brkval);
+        #endif
       }
+      #ifdef PROFILING
+      inference_time_layer_wise[j] = (millis() - layer_start);
+      wait_layer_wise[j] = wait_layer;
+      wait_total += wait_layer;
+      #endif
     }
   #ifdef PROFILING
-  Serial.print("Inference took ");
-  Serial.print(((float) (millis() - inference_start)) / 1000.0 );
-  Serial.println("s");
-  ramUsageTimer.end();
+  inference_time = millis() - inference_start;
   #endif
 }
 void loop() {
   if (Serial.available()) {
-    #ifdef PROFILING
-    if (first_run) {
-      for (uint i = 0; i < MAX_RAM_USAGE_SAMPLES; i++) {
-        Serial.print(ram_usage[i]);
-        Serial.print(", ");
-      }
-    }
-    #endif
     menu_handler();
   }
   // sendUDPMessage("1 to 2", ip2, localPort);
