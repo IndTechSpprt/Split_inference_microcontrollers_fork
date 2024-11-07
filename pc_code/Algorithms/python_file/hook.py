@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from PIL import Image
 from torchvision.models import mobilenet_v2
+from pretrained_mobilenetv2.models.imagenet import mobilenetv2
 import torch
 import torch.nn as nn
 import json
@@ -132,12 +133,13 @@ def trace_weights(hook):
             output = layer[2](layer[0][0])
             np.savetxt("../test_references/141.txt", layer[1][0].flatten().detach().numpy(), fmt='%.10f', delimiter=',')
             break
-        print(f"layer {layer_id} finished")
+        # print(f"layer {layer_id} finished")
     return mapping
 
 
 # Load the pretrained MobileNetV2 model
-model = mobilenet_v2(pretrained=True)
+model = mobilenetv2()
+model.load_state_dict(torch.load('pretrained_mobilenetv2/pretrained/mobilenetv2_128x128-fd66a69d.pth','cpu'))
 model.eval()
 # Instantiate the hook
 hook = IntermediateOutputsHook()
@@ -146,14 +148,14 @@ input_image = Image.open("../images/img.png")
 input_image = input_image.convert("RGB")
 # print("Image Mode:", input_image.mode)
 preprocess = transforms.Compose([
-    # transforms.Resize(256),
-    # transforms.CenterCrop(224),
+    transforms.Resize(256),
+    transforms.CenterCrop(128),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
 input_tensor = preprocess(input_image)
-print(input_tensor)
+# print(input_tensor)
 input_batch = input_tensor.unsqueeze(0)
 # input_data = torch.rand((1, 3, 44, 44))
 # Forward pass with the hooked model
@@ -172,7 +174,7 @@ print("Max scores:", max_scores)
 # Access the intermediate outputs
 intermediate_outputs = hook.outputs
 mapping = trace_weights(hook)
-with open('../json_files/141.json', 'w') as file:
+with open('../json_files/141_small.json', 'w') as file:
     json.dump(mapping, file)
 print("-----")
 # Remove the hooks after you're done
