@@ -33,11 +33,55 @@ IntervalTimer ramUsageTimer; //Interval timer to keep track of RAM usage
 
 WriteTypes type = Stop; //Current write type
 
-byte* input_distribution;
+std::vector<byte> input_distribution;
 byte* overflow = nullptr;  // Initialize overflow pointer
 bool overflow_flag = false;
 int rec_count = 0;
 int ino_count = 0;
+
+unsigned int allocated_mem = 0;
+unsigned int big_piece = 0;
+
+void check_fragmentation(int elements_on_heap) {
+  if (allocated_mem == big_piece) {
+      Serial.println("Memory sufficient");
+  }
+  else {
+      if ((elements_on_heap % 2 == 0)) {
+        byte* temp = new (std::nothrow) byte[elements_on_heap/2];
+        if (temp != nullptr) {
+          allocated_mem += elements_on_heap/2;
+          check_fragmentation(elements_on_heap/2);
+        }
+        else {
+          byte* last_attempt = new(std::nothrow) byte[big_piece-allocated_mem];
+          if (last_attempt == nullptr) {
+            Serial.println("Ran out of memory");
+          }
+          else {
+            allocated_mem += big_piece-allocated_mem;
+            Serial.println("Memory sufficient but fragmented");
+          }
+        }
+      }
+      else {
+        byte* last_attempt = new(std::nothrow) byte[big_piece-allocated_mem];
+        if (last_attempt == nullptr) {
+          Serial.println("Ran out of memory");
+        }
+        else {
+            allocated_mem += big_piece-allocated_mem;
+            Serial.println("Memory sufficient but fragmented");
+        }
+      }
+  }
+  Serial.print("Needed: ");
+  Serial.println(big_piece);
+  Serial.print("Allocated: ");
+  Serial.println(allocated_mem);
+  while (1) {}
+}
+
 void setup() {
   setup_filesys();
   {
@@ -48,6 +92,7 @@ void setup() {
     // Initialize coor_lines and lines
     read_line_by_line(COOR_LINES_FILENAME, coor_lines);
     read_line_by_line(LINES_FILENAME, lines);
+    input_distribution.reserve(451585);
   }
   #ifdef PROFILING
   uint inference_start = millis();
@@ -62,16 +107,16 @@ void setup() {
     Serial.print("Current layer: ");
     Serial.println(j);
     if(j < 52){
-        if(j == 0) input_distribution = new byte[input_length[0]];
+        if(j == 0) input_distribution.resize(input_length[0]);
         {
             Serial.print("rec_count is: ");
             Serial.println(rec_count);
             Serial.println("not enough inputs, receiving...");
-            if(input_distribution == nullptr){
-              while(1){
-                Serial.println("input is nullptr!");
-              }
-            }
+            // if(input_distribution == nullptr){
+            //   while(1){
+            //     Serial.println("input is nullptr!");
+            //   }
+            // }
             #ifdef PROFILING
             wait_phase_begin = millis();
             #endif
@@ -109,13 +154,18 @@ void setup() {
           #ifdef PROFILING
           ram_usage_by_layer[j] = 524288 - ((char*)&_heap_end - __brkval);
           #endif
-          if(input_distribution != nullptr) delete[] input_distribution;
+          // if(input_distribution != nullptr) delete[] input_distribution;
         }
         if (overflow_flag) {
           otf(overflow, total_output_count - STACK_SIZE);
           delete[] overflow;
         }
-        input_distribution = new byte[input_length[j + 1]];
+        input_distribution.resize(input_length[j + 1]);
+        // input_distribution = new (std::nothrow) byte[input_length[j + 1]];
+        // if (input_distribution == nullptr) {
+          // big_piece = input_length[j+1];
+          // check_fragmentation(input_length[j+1]);
+        // }
         Serial.println("waiting for permission...");
         #ifdef PROFILING
         wait_phase_begin = millis();
@@ -130,9 +180,9 @@ void setup() {
           to_send[0] = MCU_ID;
           int send_count = 0;
           Mapping mapping;
-          // Serial.println("!!!!");
+          Serial.println("!!!!");
           mapping = get_mapping(j + 1);
-          // Serial.println("got mapping");
+          Serial.println("got mapping");
           int phase = mapping.count.size();
           if (overflow_flag) {
             dataFile = myfs.open("overflow.bin", FILE_READ);

@@ -26,7 +26,7 @@ int get_input_count(Weight& w){
     return -1;
   }
 }
-void distributed_computation(std::vector<Weight>& w, byte* input_distribution,byte result[],byte* overflow,int len) {
+void distributed_computation(std::vector<Weight>& w, std::vector<byte>& input_distribution,byte result[],byte* overflow,int len) {
   if (w.size() == 0) { return {}; }
   if (w[0].i.type == Type::Convolution) { 
     int max_index = 0;

@@ -8,7 +8,7 @@
 WriteTypes type = Stop; //Current write type
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   setup_filesys();
   Serial.println("---Ready to download, press 'h' to display the menu---");
 }

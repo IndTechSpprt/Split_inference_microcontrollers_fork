@@ -88,7 +88,7 @@ void send_ack(){
   client.write(message,MESSAGE_SIZE);
 }
 
-void sendtoMCUs(char* message, std::vector<byte>& MCUs,const byte cur_mcu,byte* cur_input,int& rec_count,int& send_count){
+void sendtoMCUs(char* message, std::vector<byte>& MCUs,const byte cur_mcu,std::vector<byte>& cur_input,int& rec_count,int& send_count){
   message[1] = 0;
   for(byte m : MCUs){
     if(m == cur_mcu){
@@ -108,7 +108,7 @@ void sendtoMCUs(char* message, std::vector<byte>& MCUs,const byte cur_mcu,byte* 
     send_message_to_coordinator(message);    
   }
 }
-void check_and_receive(int& rec_count,byte* input_distribution){
+void check_and_receive(int& rec_count,std::vector<byte>& input_distribution){
   int count = 0;
   if(client.available()){  
     delay(10);
@@ -134,7 +134,7 @@ void check_and_receive(int& rec_count,byte* input_distribution){
     send_ack();      
   }
 }
-void wait_for_permission(int& rec_count,byte* input_distribution){
+void wait_for_permission(int& rec_count,std::vector<byte>& input_distribution){
   check_and_receive(rec_count,input_distribution);
   char message[MESSAGE_SIZE];
   message[SOURCE_ID] = MCU_ID;

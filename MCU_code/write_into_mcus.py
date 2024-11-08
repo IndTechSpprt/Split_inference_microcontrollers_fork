@@ -14,7 +14,7 @@ to_download = sys.argv[2]
 id = os.environ['mcu_id']
 
 # Configure serial port (change COMx to match your Arduino's serial port)
-ser = serial.Serial(com, 9600, timeout=1)  # Adjust baud rate and port as needed
+ser = serial.Serial(com, 115200, timeout=1)  # Adjust baud rate and port as needed
 
 
 def send_data_to_arduino(data):
