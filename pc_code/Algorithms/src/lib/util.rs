@@ -47,14 +47,14 @@ pub fn read_and_store_image(file_path: &str) -> Option<Vec<Vec<Vec<u8>>>> {
     // Attempt to open the image file
     if let Ok(img) = image::open(file_path) {
         // Resize and center crop the image to 224x224
-        let mut resized_img = img.resize_exact(256, 256, image::imageops::FilterType::Triangle);
-        let cropped_img = resized_img.crop(31, 31, 224, 224);
+        let mut resized_img = img.resize_exact(147, 147, image::imageops::FilterType::Triangle);
+        let cropped_img = resized_img.crop(19, 19, 128, 128);
 
         // Convert the image to RGB format
         let rgb_img = cropped_img.to_rgb8();
 
         // Create a nested vector [3, 224, 224]
-        let mut result: Vec<Vec<Vec<u8>>> = vec![vec![vec![0; 224]; 224]; 3];
+        let mut result: Vec<Vec<Vec<u8>>> = vec![vec![vec![0; 128]; 128]; 3];
 
         // Iterate over the pixels and store them in the nested vector
         for (y, row) in rgb_img.enumerate_rows() {
@@ -73,12 +73,12 @@ pub fn read_and_store_image(file_path: &str) -> Option<Vec<Vec<Vec<u8>>>> {
 pub fn pre_processing(image: Vec<Vec<Vec<u8>>>) -> Vec<Vec<Vec<f32>>> {
     let mean = [0.485, 0.456, 0.406];
     let std = [0.229, 0.224, 0.225];
-    assert!(image.len() == 3 && image[0].len() == 224 && image[0][0].len() == 224);
+    assert!(image.len() == 3 && image[0].len() == 128 && image[0][0].len() == 128);
     // Convert the RGB values to f32, normalize, subtract mean, and scale by std
-    let mut normalized_image: Vec<Vec<Vec<f32>>> = vec![vec![vec![0.; 224]; 224]; 3];
+    let mut normalized_image: Vec<Vec<Vec<f32>>> = vec![vec![vec![0.; 128]; 128]; 3];
     for i in 0..3 {
-        for j in 0..224 {
-            for k in 0..224 {
+        for j in 0..128 {
+            for k in 0..128 {
                 normalized_image[i][j][k] = (image[i][j][k] as f32 / 255. - mean[i]) / std[i];
             }
         }

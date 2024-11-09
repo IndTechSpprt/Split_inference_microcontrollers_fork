@@ -31,7 +31,7 @@ import json
 # # Perform the desired operations on each element
 # processed_values = [(x / 0.017818455 + 114.38545) for x in flattened_list]
 # processed_values = [min(max(round(value), 0), 255) for value in processed_values]
-with open('input.txt', 'r') as file:
+with open('input_new.txt', 'r') as file:
     # Read lines from the file and strip newline characters
     lines = file.readlines()
     # Convert each line to an integer and collect them into a list
@@ -187,9 +187,9 @@ try:
                             print(f"sending permission to {next}")
                             sockets[next[1]].sendall(received_data)
                             wait_for_ack(sockets[next[1]], message_size)
-                        if len(to_adaptive_pooling) == 1280 * 7 * 7:
-                            for i in range(0, len(to_adaptive_pooling), 7 * 7):
-                                chunk = to_adaptive_pooling[i:i + 7 * 7]
+                        if len(to_adaptive_pooling) == 1280 * 4 * 4:
+                            for i in range(0, len(to_adaptive_pooling), 4 * 4):
+                                chunk = to_adaptive_pooling[i:i + 4 * 4]
                                 average = int(round(sum(chunk) / len(chunk)))
                                 pooled_means.append(average)
                             for i in range(len(sockets)):
@@ -231,10 +231,17 @@ try:
                             wait_for_ack(sockets[w], message_size)
 except KeyboardInterrupt:
     index = 0
+    results = []
     with open("inference_results_mcu.txt", 'w') as file:
         for count in range(num_mcu):
             for result in results_dict[str(count)]:
                 file.write(str(index)+": "+str(result)+"\n")
+                results.append(result)
                 index+=1
+    sorted_labels = np.argsort(np.array(results).flatten())
+    print("Top 5: ")
+    for i in range(5):
+        print(sorted_labels[999-i])
+
     
     print("Closing connection")

@@ -5,9 +5,10 @@ use crate::util::{
 use algo::util::{pre_processing, read_and_store_image};
 use algo::{QuantizedMapping, QuantizedWeightUnit};
 use chrono::prelude::*;
+use serde::de::value;
 use core::num;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Write};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::time::Instant;
@@ -284,6 +285,10 @@ pub fn c_1_simulation_quant(num_workers: u8, end: usize) {
                     } else {
                         println!("Vector is empty.");
                     } // test_equal(result_vec);
+                    let mut res_file = File::create("inference_results_simulation.txt").unwrap();
+                    for (index, val) in result_vec.iter().enumerate() {
+                        res_file.write_fmt(format_args!("{}: {}\n", index, val)).unwrap();
+                    }
                     break;
                 }
             }
@@ -293,6 +298,10 @@ pub fn c_1_simulation_quant(num_workers: u8, end: usize) {
     //intput
     let image = pre_processing(read_and_store_image("pc_code/Algorithms/images/img.png").unwrap());
     let raw_input = flatten_3d_array(image);
+    let mut input_file = File::create("input_sim.txt").unwrap();
+    for val in raw_input.clone() {
+        input_file.write_fmt(format_args!("{}\n",val)).unwrap();
+    }
     let input = raw_input
         .into_iter()
         .map(|x| (x / 0.017818455 + 114.38545).round().clamp(0., 255.) as u8)

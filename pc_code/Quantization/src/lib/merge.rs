@@ -121,7 +121,7 @@ pub fn merge_batchnorm(layers: HashMap<i32, Box<dyn Layer>>) {
         }
     }
     let serialized = serde_json::to_string(&modified_mapping).unwrap();
-    let file_name = "fused_layers_141.json";
+    let file_name = "fused_layers_141_small.json";
     let output_dir = "pc_code/Fused";
     match fs::create_dir_all(&output_dir) {
         Ok(_) => println!("Folder created successfully"),
