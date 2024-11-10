@@ -148,7 +148,7 @@ input_image = Image.open("../images/img.png")
 input_image = input_image.convert("RGB")
 # print("Image Mode:", input_image.mode)
 preprocess = transforms.Compose([
-    transforms.Resize(256),
+    transforms.Resize(147),
     transforms.CenterCrop(128),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
@@ -160,7 +160,7 @@ input_batch = input_tensor.unsqueeze(0)
 # input_data = torch.rand((1, 3, 44, 44))
 # Forward pass with the hooked model
 output = model(input_batch)
-max_scores, predicted_classes = torch.max(output, dim=1)
+max_scores, predicted_classes = torch.topk(output, 5, dim=1)
 
 # 'predicted_classes' now contains the predicted class indices for each sample
 print("Predicted classes:", predicted_classes)

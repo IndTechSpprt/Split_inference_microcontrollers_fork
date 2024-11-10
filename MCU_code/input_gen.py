@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch
 
 # Load the input from framework
-input_tensor = np.loadtxt("input_sim.txt")
+input_tensor = np.loadtxt("../pc_code/input_sim.txt")
 input_tensor = torch.from_numpy(input_tensor.reshape(3,128,128))
 input_tensor = F.pad(input_tensor, (1, 0, 1, 0), value=0)
 # Flatten the tensor into a 1D array

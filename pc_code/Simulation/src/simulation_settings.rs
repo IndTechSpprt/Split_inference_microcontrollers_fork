@@ -285,7 +285,7 @@ pub fn c_1_simulation_quant(num_workers: u8, end: usize) {
                     } else {
                         println!("Vector is empty.");
                     } // test_equal(result_vec);
-                    let mut res_file = File::create("inference_results_simulation.txt").unwrap();
+                    let mut res_file = File::create("pc_code/inference_results_simulation.txt").unwrap();
                     for (index, val) in result_vec.iter().enumerate() {
                         res_file.write_fmt(format_args!("{}: {}\n", index, val)).unwrap();
                     }
@@ -298,7 +298,7 @@ pub fn c_1_simulation_quant(num_workers: u8, end: usize) {
     //intput
     let image = pre_processing(read_and_store_image("pc_code/Algorithms/images/img.png").unwrap());
     let raw_input = flatten_3d_array(image);
-    let mut input_file = File::create("input_sim.txt").unwrap();
+    let mut input_file = File::create("pc_code/input_sim.txt").unwrap();
     for val in raw_input.clone() {
         input_file.write_fmt(format_args!("{}\n",val)).unwrap();
     }

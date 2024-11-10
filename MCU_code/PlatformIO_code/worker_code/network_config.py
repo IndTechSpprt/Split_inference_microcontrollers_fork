@@ -38,4 +38,4 @@ if 'append_to_testbed' in os.environ:
             testbed.append(to_append)
             json.dump(testbed,file)
 
-print("'-DMCU_ID=%s' '-DIP_END=%s' '-DMAC_END=%s'" % (id, ip_end, mac_end))
+print("'-DMCU_ID=%s' '-DIP_END=%s' '-DMAC_END=%s', '-DPROFILING'" % (id, ip_end, mac_end))

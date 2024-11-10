@@ -16,7 +16,7 @@ use std::thread;
 fn main() {
     let file = File::open("./pc_code/Fused/fused_layers_141_small.json").expect("Failed to open file");
     let layers = decode::decode_json(file);
-    let num_workers = 4;
+    let num_workers = 8;
     let protions = vec![1;num_workers as usize];
     distribute_mapping_weight_quant(layers,num_workers,(3,128,128),"pc_code/Simulation/Simu_q".to_string(),protions);
     c_1_simulation_quant(num_workers, 70);
